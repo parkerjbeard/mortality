@@ -1,0 +1,1 @@
+Mortality is a time‑aware, multi‑agent experimentation harness for orchestrating countdown‑based experiments, coordinating agents, and recording structured telemetry and diaries for analysis. This is an initial placeholder README created with the project’s first commit; a fuller write‑up on philosophy, design, architecture, and usage will be added later.

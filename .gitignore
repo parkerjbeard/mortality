@@ -1,0 +1,70 @@
+# Python bytecode and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+share/python-wheels/
+
+# Virtual environments / packaging
+.venv/
+venv/
+.env
+.env.*
+.python-version
+.pdm-python
+.hatch*
+__pypackages__/
+
+# Tool caches and reports
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.tox/
+.nox/
+.cache/
+
+# Coverage artifacts
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Logs and databases
+*.log
+logs/
+*.db
+*.sqlite*
+.sql
+
+# Node / frontend (Vite + Tailwind)
+node_modules/
+ui/**/node_modules/
+ui/**/dist/
+ui/**/.vite/
+.vite/
+*.tsbuildinfo
+
+# Editor / OS detritus
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Runtime secrets / repo-specific outputs
+*.pem
+*.key
+*.crt
+/examples/**/outputs/
+/tests/**/artifacts/
