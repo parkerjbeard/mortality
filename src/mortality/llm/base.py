@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import abc
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -128,21 +127,12 @@ class ClientRegistry:
     def providers(self) -> List[LLMProvider]:
         return list(self._clients.keys())
 
+    def clients(self) -> List[LLMClient]:
+        return list(self._clients.values())
+
 
 client_registry = ClientRegistry()
 
 
 class ProviderUnavailable(RuntimeError):
     pass
-
-
-class StreamingParser(abc.ABC):
-    """Adapter that converts provider-specific deltas into internal events."""
-
-    @abc.abstractmethod
-    def feed(self, chunk: Any) -> Iterable[LLMStreamEvent]:  # pragma: no cover - abstract
-        ...
-
-    @abc.abstractmethod
-    def end(self) -> Iterable[LLMStreamEvent]:  # pragma: no cover - abstract
-        ...

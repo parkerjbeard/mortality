@@ -54,7 +54,7 @@ export const TimelineView = ({ bundle, snapshots, playback }: TimelineViewProps)
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div
         ref={containerRef}
-        className="relative rounded-3xl border border-white/5 bg-white/5 p-4"
+        className="relative rounded-3xl border border-white/5 bg-panel/30 p-4"
         onClick={handleTimelineClick}
       >
         <div className="flex flex-col" style={{ gap: `${laneGap}px` }}>

@@ -30,7 +30,7 @@ export const TimelineLane = ({
   const percent = (ts: number) => `${(((ts - timeline.startMs) / timeline.durationMs) * 100).toFixed(3)}%`
 
   return (
-    <div className="rounded-3xl border border-white/5 bg-white/5 p-4">
+    <div className="rounded-3xl border border-white/5 bg-panel/20 p-4">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">{bundle.agents[agentId].archetype}</p>

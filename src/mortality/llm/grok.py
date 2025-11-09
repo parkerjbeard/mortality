@@ -37,9 +37,13 @@ class GrokChatClient(LLMClient):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
         self._default_model = default_model
+        self._client = httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout)
 
     async def create_session(self, config: LLMSessionConfig) -> LLMSession:
         return LLMSession(id=str(uuid4()), config=config)
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
 
     async def stream_response(
         self,
@@ -64,34 +68,34 @@ class GrokChatClient(LLMClient):
         }
         timeout = session.config.metadata.get("request_timeout")
         last_metadata: Dict[str, Any] = {"model": payload["model"]}
-        async with httpx.AsyncClient(timeout=timeout or self._timeout) as client:
-            async with client.stream(
-                "POST",
-                f"{self._base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if not line:
-                        continue
-                    if line.startswith(":"):
-                        continue
-                    if line.startswith("data:"):
-                        line = line[5:]
-                    chunk_raw = line.strip()
-                    if not chunk_raw:
-                        continue
-                    if chunk_raw == "[DONE]":
-                        break
-                    chunk = self._parse_chunk(chunk_raw)
-                    if chunk is None:
-                        continue
-                    chunk_meta = self._extract_chunk_metadata(chunk)
-                    if chunk_meta:
-                        last_metadata.update(chunk_meta)
-                    for event in self._chunk_events(chunk, chunk_meta):
-                        yield event
+        async with self._client.stream(
+            "POST",
+            f"{self._base_url}/chat/completions",
+            json=payload,
+            headers=headers,
+            timeout=timeout or self._timeout,
+        ) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if not line:
+                    continue
+                if line.startswith(":"):
+                    continue
+                if line.startswith("data:"):
+                    line = line[5:]
+                chunk_raw = line.strip()
+                if not chunk_raw:
+                    continue
+                if chunk_raw == "[DONE]":
+                    break
+                chunk = self._parse_chunk(chunk_raw)
+                if chunk is None:
+                    continue
+                chunk_meta = self._extract_chunk_metadata(chunk)
+                if chunk_meta:
+                    last_metadata.update(chunk_meta)
+                for event in self._chunk_events(chunk, chunk_meta):
+                    yield event
         yield LLMStreamEvent(type="end", metadata=last_metadata)
 
     def _parse_chunk(self, payload: str) -> Dict[str, Any] | None:

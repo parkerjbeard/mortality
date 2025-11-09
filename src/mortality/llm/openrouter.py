@@ -41,6 +41,10 @@ class OpenRouterChatClient(LLMClient):
         self._default_model = default_model
         self._referer = referer or os.getenv("OPENROUTER_HTTP_REFERER")
         self._app_title = app_title or os.getenv("OPENROUTER_APP_TITLE")
+        self._client = httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout)
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
 
     async def create_session(self, config: LLMSessionConfig) -> LLMSession:
         return LLMSession(id=str(uuid4()), config=config)
@@ -78,15 +82,15 @@ class OpenRouterChatClient(LLMClient):
 
         timeout = session.config.metadata.get("request_timeout") if session.config.metadata else None
         last_metadata: Dict[str, Any] = {"model": payload["model"]}
-        async with httpx.AsyncClient(timeout=timeout or self._timeout) as client:
-            async with client.stream(
-                "POST",
-                f"{self._base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
+        async with self._client.stream(
+            "POST",
+            f"{self._base_url}/chat/completions",
+            json=payload,
+            headers=headers,
+            timeout=timeout or self._timeout,
+        ) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
                     if not line:
                         continue
                     if line.startswith(":"):

@@ -31,33 +31,14 @@ class Diary(BaseModel):
         return cls(entries=list(entries))
 
 
-class Scratchpad(BaseModel):
-    """Short-term, per-life scraps that can be summarized into diaries."""
-
-    lines: List[str] = Field(default_factory=list)
-    max_lines: int = 50
-
-    def push(self, text: str) -> None:
-        self.lines.append(text)
-        if len(self.lines) > self.max_lines:
-            self.lines.pop(0)
-
-    def flush(self) -> str:
-        text = "\n".join(self.lines)
-        self.lines.clear()
-        return text
-
-
 class AgentMemory(BaseModel):
     """Lifecycle-aware memory capsule."""
 
     diary: Diary = Field(default_factory=Diary)
-    scratchpad: Scratchpad = Field(default_factory=Scratchpad)
     life_index: int = 0
 
     def start_new_life(self) -> None:
         self.life_index += 1
-        self.scratchpad = Scratchpad()
 
     def remember(self, text: str, tick_ms_left: int, tags: Optional[List[str]] = None) -> DiaryEntry:
         entry = DiaryEntry(
@@ -68,6 +49,4 @@ class AgentMemory(BaseModel):
         )
         self.diary.add(entry)
         return entry
-
-
-__all__ = ["Diary", "DiaryEntry", "Scratchpad", "AgentMemory"]
+__all__ = ["Diary", "DiaryEntry", "AgentMemory"]

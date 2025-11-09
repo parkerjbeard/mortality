@@ -14,7 +14,11 @@ from mortality.telemetry.recorder import StructuredTelemetrySink
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run mortality experiments")
-    parser.add_argument("--experiment", required=True, help="Experiment slug (countdown-self, staggered-deaths, respawn-diaries)")
+    parser.add_argument(
+        "--experiment",
+        required=True,
+        help="Experiment slug (countdown-self, staggered-deaths, respawn-diaries, autogen-emergent)",
+    )
     parser.add_argument(
         "--llm-provider",
         required=True,

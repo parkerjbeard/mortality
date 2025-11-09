@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from ..agents.lifecycle import MortalityAgent
 from ..llm.base import LLMMessage
-from .bus import DiaryAccessDecision, DiaryAccessRequest, DiaryPermissionHandler
+from .bus import DiaryAccessDecision, DiaryAccessRequest
 
 DEFAULT_PROMPT = (
     "Peer agent {requestor_id} requests access to your diary entries "
@@ -12,7 +12,7 @@ DEFAULT_PROMPT = (
 )
 
 
-class AgentConsentPrompter(DiaryPermissionHandler):
+class AgentConsentPrompter:
     """Uses the target agent's own model to decide if sharing is acceptable."""
 
     def __init__(

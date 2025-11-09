@@ -4,7 +4,7 @@ import { AgentSnapshot } from '@/lib/derive'
 import { PlaybackControls } from '@/hooks/usePlayback'
 import { AgentCard } from './AgentCard'
 import { AgentDrawer } from './AgentDrawer'
-import { EventFilter, EventStream } from './EventStream'
+import { LifeFeed } from './LifeFeed'
 
 interface BoardViewProps {
   bundle: NormalizedBundle
@@ -22,18 +22,6 @@ export const BoardView = ({
   const [selectedAgent, setSelectedAgent] = useState<string | null>(
     bundle.agentOrder[0] ?? null,
   )
-  const [activeFilters, setActiveFilters] = useState<Set<EventFilter>>(
-    () =>
-      new Set<EventFilter>([
-        'interaction',
-        'message',
-        'tool',
-        'diary',
-        'tick',
-        'death',
-        'respawn',
-      ]),
-  )
 
   useEffect(() => {
     setSelectedAgent(bundle.agentOrder[0] ?? null)
@@ -47,28 +35,14 @@ export const BoardView = ({
     .map((agentId) => snapshots[agentId])
     .filter(Boolean)
 
-  const toggleFilter = (filter: EventFilter) => {
-    setActiveFilters((current) => {
-      const next = new Set(current)
-      if (next.has(filter)) {
-        next.delete(filter)
-      } else {
-        next.add(filter)
-      }
-      return next
-    })
-  }
-
   const selectedSnapshot = selectedAgent ? snapshots[selectedAgent] : undefined
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+    <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
       <div className="space-y-6">
-        <EventStream
+        <LifeFeed
           bundle={bundle}
-          events={events}
-          activeFilters={activeFilters}
-          onToggleFilter={toggleFilter}
+          playback={playback}
           onJump={(ts) => {
             playback.seekMs(ts)
             playback.setPlaying(false)
@@ -92,8 +66,8 @@ export const BoardView = ({
           </div>
         )}
       </div>
-      <div className="relative">
-        <div className="grid gap-4 md:grid-cols-2">
+      <div className="relative space-y-5">
+        <div className="grid gap-3 md:grid-cols-2">
           {agentCards.map((snapshot) => (
             <AgentCard
               key={snapshot.agentId}

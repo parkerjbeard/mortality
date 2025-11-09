@@ -141,14 +141,6 @@ class MortalityRuntime:
         )
         return [resource.to_message() for resource in resources]
 
-    async def wait_for_all_timers(self) -> None:
-        await asyncio.gather(*(timer.wait() for timer in self._timers.values()), return_exceptions=True)
-
-    def cancel_timer(self, agent_id: str) -> None:
-        timer = self._timers.get(agent_id)
-        if timer:
-            timer.cancel()
-
     async def shutdown(self) -> None:
         for timer in self._timers.values():
             timer.cancel()
@@ -156,6 +148,18 @@ class MortalityRuntime:
         self._agents.clear()
         self._timers.clear()
         self._timer_tasks.clear()
+        await self._close_registered_clients()
+
+    async def _close_registered_clients(self) -> None:
+        closers = []
+        for client in self._registry.clients():
+            closer = getattr(client, "aclose", None)
+            if closer:
+                result = closer()
+                if asyncio.iscoroutine(result):
+                    closers.append(result)
+        if closers:
+            await asyncio.gather(*closers, return_exceptions=True)
 
 
 __all__ = ["MortalityRuntime"]

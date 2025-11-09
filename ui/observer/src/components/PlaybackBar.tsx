@@ -8,27 +8,34 @@ interface PlaybackBarProps {
   bundle: NormalizedBundle
 }
 
-const speedOptions = [0.5, 1, 2, 4]
+const speedOptions = [0.5, 1, 2, 4, 8]
 
 export const PlaybackBar = ({ playback, bundle }: PlaybackBarProps) => {
+  const elapsedMs = Math.max(0, playback.playheadMs - bundle.timeline.startMs)
+  const remainingMs = Math.max(0, bundle.timeline.endMs - playback.playheadMs)
+
   return (
-    <div className="rounded-2xl border border-white/5 bg-panel/80 p-4 shadow-2xl shadow-black/30 backdrop-blur">
+    <div className="rounded-3xl border border-white/5 bg-panel/30 p-4 space-y-4">
       <div className="flex flex-wrap items-center gap-4">
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-lg font-semibold text-white transition hover:bg-white/20"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-lg text-white transition hover:border-white/40"
           onClick={playback.toggle}
           aria-label={playback.playing ? 'Pause playback' : 'Play timeline'}
         >
           {playback.playing ? '❚❚' : '►'}
         </button>
         <div className="flex flex-col">
-          <span className="text-xs uppercase tracking-wide text-slate-400">Now</span>
-          <span className="font-semibold text-white">{formatTimestamp(playback.playheadMs)}</span>
+          <span className="text-xs uppercase tracking-wide text-slate-500">Now</span>
+          <span className="text-lg font-semibold text-white">{formatTimestamp(playback.playheadMs)}</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-xs uppercase tracking-wide text-slate-400">Countdown</span>
-          <span className="font-semibold text-white">{formatCountdown(bundle.timeline.endMs - playback.playheadMs)}</span>
+          <span className="text-xs uppercase tracking-wide text-slate-500">Elapsed</span>
+          <span className="text-lg font-semibold text-white">{formatDuration(elapsedMs)}</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-xs uppercase tracking-wide text-slate-500">Remaining</span>
+          <span className="text-lg font-semibold text-white">{formatCountdown(remainingMs)}</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs uppercase tracking-wide text-slate-500">Speed</span>
@@ -39,7 +46,7 @@ export const PlaybackBar = ({ playback, bundle }: PlaybackBarProps) => {
               onClick={() => playback.setSpeed(speed)}
               className={clsx(
                 'rounded-full px-3 py-1 text-xs font-semibold transition',
-                playback.speed === speed ? 'bg-accent/30 text-accent' : 'bg-white/5 text-slate-400 hover:bg-white/10',
+                playback.speed === speed ? 'bg-accent/20 text-accent' : 'bg-white/5 text-slate-400 hover:bg-white/10',
               )}
             >
               {speed.toFixed(speed < 1 ? 1 : 0)}×
@@ -47,7 +54,7 @@ export const PlaybackBar = ({ playback, bundle }: PlaybackBarProps) => {
           ))}
         </div>
       </div>
-      <div className="mt-4 space-y-1">
+      <div className="space-y-1">
         <input
           type="range"
           min={0}
@@ -56,7 +63,7 @@ export const PlaybackBar = ({ playback, bundle }: PlaybackBarProps) => {
           onChange={(event) => playback.seekFraction(Number(event.target.value) / 1000)}
           className="w-full accent-accent"
         />
-        <div className="flex justify-between text-xs text-slate-400">
+        <div className="flex justify-between text-xs text-slate-500">
           <span>{formatTimestamp(bundle.timeline.startMs)}</span>
           <span>{formatDuration(bundle.timeline.durationMs)}</span>
           <span>{formatTimestamp(bundle.timeline.endMs)}</span>

@@ -1,4 +1,4 @@
-import { AgentProfile, NormalizedBundle, NormalizedDiaryEntry, NormalizedEvent, eventAgentId, safeDate } from './bundle'
+import { AgentProfile, NormalizedBundle, NormalizedDiaryEntry, eventAgentId, safeDate } from './bundle'
 
 export type AgentStatus = 'pending' | 'alive' | 'respawning' | 'expired'
 
@@ -127,10 +127,4 @@ const normalizeDiaryFromPayload = (value: unknown): NormalizedDiaryEntry | undef
     created_at: typeof entry.created_at === 'string' ? entry.created_at : new Date().toISOString(),
     createdAtMs: entry.createdAtMs ?? safeDate(entry.created_at ?? new Date().toISOString()),
   }
-}
-
-export const getAgentEvents = (bundle: NormalizedBundle, agentId: string, type?: string): NormalizedEvent[] => {
-  const list = bundle.eventsByAgent[agentId] ?? []
-  if (!type) return list
-  return list.filter((event) => event.event === type)
 }

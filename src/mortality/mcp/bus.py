@@ -46,9 +46,6 @@ class DiaryAccessDecision(BaseModel):
     expires_in_seconds: int | None = None
     # Optional max_uses for stateful consumption; None => unlimited uses
     max_uses: int | None = None
-    # Optional routing/constraints
-    audience: Optional[str] = None
-    session_id: Optional[str] = None
 
 
 class DiaryAccessToken(BaseModel):
@@ -61,8 +58,6 @@ class DiaryAccessToken(BaseModel):
     # Stateful use counting (None => unlimited)
     max_uses: Optional[int] = None
     uses_remaining: Optional[int] = None
-    audience: Optional[str] = None
-    session_id: Optional[str] = None
 
     def is_valid(self) -> bool:
         if self.expires_at is not None and datetime.now(timezone.utc) >= self.expires_at:
@@ -238,8 +233,6 @@ class SharedMCPBus:
             expires_at=expires_at,
             max_uses=max_uses,
             uses_remaining=uses_remaining,
-            audience=decision.audience,
-            session_id=decision.session_id,
         )
         async with self._lock:
             self._tokens[token.token] = token
@@ -316,14 +309,12 @@ class SharedMCPBus:
             entries=[entry.model_dump(mode="json") for entry in entries],
             annotations={
                 "grantedAt": token.granted_at.isoformat(),
-                "expiresAt": token.expires_at.isoformat() if token.expires_at else None,
-                "scope": token.scope.model_dump(mode="json"),
-                "maxUses": token.max_uses,
-                "usesRemaining": token.uses_remaining,
-                "audience": token.audience,
-                "sessionId": token.session_id,
-            },
-        )
+            "expiresAt": token.expires_at.isoformat() if token.expires_at else None,
+            "scope": token.scope.model_dump(mode="json"),
+            "maxUses": token.max_uses,
+            "usesRemaining": token.uses_remaining,
+        },
+    )
 
 
 __all__ = [

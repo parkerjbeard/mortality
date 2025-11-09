@@ -58,7 +58,6 @@ export interface DiaryConnector {
   toAgentId: string
   fromTs: number
   toTs: number
-  snippet: string
 }
 
 export interface NormalizedBundle {
@@ -168,7 +167,6 @@ const buildDiaryConnectors = (
         toAgentId: match.agentId,
         fromTs: death.tsMs,
         toTs: match.createdAtMs,
-        snippet: truncate(match.text, 120),
       })
     })
   })
@@ -179,11 +177,6 @@ const buildDiaryConnectors = (
 export const safeDate = (value: string): number => {
   const ts = Date.parse(value)
   return Number.isFinite(ts) ? ts : Date.now()
-}
-
-const truncate = (value: string, limit: number): string => {
-  if (value.length <= limit) return value
-  return `${value.slice(0, limit - 1)}…`
 }
 
 export const eventAgentId = (event: NormalizedEvent): string | undefined => {

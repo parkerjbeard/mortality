@@ -9,13 +9,13 @@ interface TimelineDetailProps {
 export const TimelineDetail = ({ entry, agentName }: TimelineDetailProps) => {
   if (!entry || !agentName) {
     return (
-      <div className="rounded-3xl border border-white/5 bg-white/5 p-4 text-sm text-slate-400">
+      <div className="rounded-3xl border border-white/5 bg-panel/30 p-4 text-sm text-slate-400">
         Select a diary or marker to inspect the underlying log line.
       </div>
     )
   }
   return (
-    <div className="rounded-3xl border border-white/5 bg-white/5 p-4">
+    <div className="rounded-3xl border border-white/5 bg-panel/30 p-4">
       <p className="text-xs uppercase tracking-wide text-slate-400">Agent</p>
       <h3 className="text-lg font-semibold text-white">{agentName}</h3>
       <dl className="mt-3 space-y-1 text-sm text-slate-300">

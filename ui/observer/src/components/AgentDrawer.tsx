@@ -1,7 +1,6 @@
 import { NormalizedBundle, NormalizedEvent } from '@/lib/bundle'
 import { groupDiariesByLife } from '@/lib/derive'
 import { formatTimestamp } from '@/lib/time'
-import { Fragment } from 'react'
 
 interface AgentDrawerProps {
   agentId: string

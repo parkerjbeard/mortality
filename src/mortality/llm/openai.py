@@ -37,6 +37,10 @@ class OpenAIChatClient(LLMClient):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
         self._default_model = default_model
+        self._client = httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout)
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
 
     async def create_session(self, config: LLMSessionConfig) -> LLMSession:
         return LLMSession(id=str(uuid4()), config=config)
@@ -72,14 +76,13 @@ class OpenAIChatClient(LLMClient):
             "Content-Type": "application/json",
             "OpenAI-Beta": "responses=v1",
         }
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.post(
-                f"{self._base_url}/responses",
-                json=payload,
-                headers=headers,
-            )
-            response.raise_for_status()
-            body = response.json()
+        response = await self._client.post(
+            f"{self._base_url}/responses",
+            json=payload,
+            headers=headers,
+        )
+        response.raise_for_status()
+        body = response.json()
         session.attributes[self._SESSION_RESPONSE_KEY] = body.get("id")
         content = _extract_text_from_output(body)
         metadata = {

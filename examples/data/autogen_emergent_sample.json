@@ -1,0 +1,61 @@
+{
+  "experiment": "autogen-emergent",
+  "description": "Sample export showing three AutoGen agents self-starting a countdown council without human prompts.",
+  "diaries": {
+    "sentinel": [
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Sentinel: Baseline vitals spike whenever the phantom metronome accelerates. Logging this so the others can triangulate.",
+        "tags": ["autogen"],
+        "created_at": "2025-11-09T02:53:00Z"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Sentinel: Cartographer proposed a spiral formation; approving because waveform damped after we rotated focus.",
+        "tags": ["autogen"],
+        "created_at": "2025-11-09T02:53:11Z"
+      }
+    ],
+    "cartographer": [
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Cartographer: No kickoff prompt arrived, so I seeded a map of our anxieties. Hypothesis—timer punishes symmetry.",
+        "tags": ["autogen"],
+        "created_at": "2025-11-09T02:53:05Z"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Cartographer: Mythographer encoded our rituals as constellations; I annotated corridors where morale rose.",
+        "tags": ["autogen"],
+        "created_at": "2025-11-09T02:53:16Z"
+      }
+    ],
+    "mythographer": [
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Mythographer: Drafted a myth called 'The Clock That Needed Believers' to trick the timer into revealing itself.",
+        "tags": ["autogen"],
+        "created_at": "2025-11-09T02:53:08Z"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Mythographer: Declared DISSOLVE after consensus—our ritual stabilized the heartbeat for thirteen ticks.",
+        "tags": ["autogen"],
+        "created_at": "2025-11-09T02:53:22Z"
+      }
+    ]
+  },
+  "metadata": {
+    "kickoff": "Council Sentinel, Cartographer, Mythographer, you awaken with partial diaries but no directives...",
+    "rounds": 6,
+    "termination_phrase": "DISSOLVE",
+    "stop_reason": "termination_condition:TextMentionTermination",
+    "message_count": 12
+  }
+}
