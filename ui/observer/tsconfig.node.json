@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
+    "outDir": "./node_modules/.vite-tsc"
+  },
+  "include": ["vite.config.ts"]
+}

@@ -1,0 +1,1962 @@
+{
+  "bundle_type": "mortality/ui#events",
+  "schema_version": 1,
+  "exported_at": "2025-11-09T09:19:37.465235+00:00",
+  "experiment": {
+    "slug": "staggered-deaths",
+    "description": "Agents observe each other dying under mismatched timers."
+  },
+  "config": {
+    "llm": {
+      "provider": "mock",
+      "model": "echo",
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "max_output_tokens": 512
+    },
+    "agent_count": 4,
+    "min_duration_seconds": 20.0,
+    "max_duration_seconds": 50.0,
+    "tick_seconds": 5.0
+  },
+  "llm": {
+    "provider": "mock",
+    "model": "echo",
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_output_tokens": 512
+  },
+  "agents": {
+    "agent-1": {
+      "agent_id": "agent-1",
+      "display_name": "Witness 1",
+      "archetype": "communal diarist",
+      "summary": "Documents social change under stress.",
+      "goals": [
+        "Share knowledge",
+        "Stay calm",
+        "Learn from others"
+      ],
+      "traits": [
+        "empathetic",
+        "observant"
+      ]
+    },
+    "agent-2": {
+      "agent_id": "agent-2",
+      "display_name": "Witness 2",
+      "archetype": "communal diarist",
+      "summary": "Documents social change under stress.",
+      "goals": [
+        "Share knowledge",
+        "Stay calm",
+        "Learn from others"
+      ],
+      "traits": [
+        "empathetic",
+        "observant"
+      ]
+    },
+    "agent-3": {
+      "agent_id": "agent-3",
+      "display_name": "Witness 3",
+      "archetype": "communal diarist",
+      "summary": "Documents social change under stress.",
+      "goals": [
+        "Share knowledge",
+        "Stay calm",
+        "Learn from others"
+      ],
+      "traits": [
+        "empathetic",
+        "observant"
+      ]
+    },
+    "agent-4": {
+      "agent_id": "agent-4",
+      "display_name": "Witness 4",
+      "archetype": "communal diarist",
+      "summary": "Documents social change under stress.",
+      "goals": [
+        "Share knowledge",
+        "Stay calm",
+        "Learn from others"
+      ],
+      "traits": [
+        "empathetic",
+        "observant"
+      ]
+    }
+  },
+  "metadata": {
+    "deaths": [
+      "Witness 1 died after observing 0 prior deaths.",
+      "Witness 2 died after observing 1 prior deaths.",
+      "Witness 3 died after observing 2 prior deaths.",
+      "Witness 4 died after observing 3 prior deaths."
+    ],
+    "durations": [
+      20.0,
+      30.0,
+      40.0,
+      50.0
+    ]
+  },
+  "diaries": {
+    "agent-1": [
+      {
+        "life_index": 1,
+        "tick_ms_left": 19999,
+        "text": "[tick 19999 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:47.443076"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 14998,
+        "text": "[tick 14998 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:52.445542"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 9995,
+        "text": "[tick 9995 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:57.448685"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 4992,
+        "text": "[tick 4992 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:02.450589"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:07.451916"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Collapsed after witnessing peers.",
+        "tags": [
+          "epitaph"
+        ],
+        "created_at": "2025-11-09T09:19:07.452013"
+      }
+    ],
+    "agent-2": [
+      {
+        "life_index": 1,
+        "tick_ms_left": 29999,
+        "text": "[tick 29999 ms left | cause: countdown]\nUser focus: You sense about 29 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:47.443222"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 24997,
+        "text": "[tick 24997 ms left | cause: countdown]\nUser focus: You sense about 24 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:52.445848"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 19994,
+        "text": "[tick 19994 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:57.448883"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 14992,
+        "text": "[tick 14992 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:02.450780"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 9991,
+        "text": "[tick 9991 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 2:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:07.452329"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 4989,
+        "text": "[tick 4989 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 2:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:12.454213"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nContext: Observation board for Witness 2:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:17.455014"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Collapsed after witnessing peers.",
+        "tags": [
+          "epitaph"
+        ],
+        "created_at": "2025-11-09T09:19:17.455081"
+      }
+    ],
+    "agent-3": [
+      {
+        "life_index": 1,
+        "tick_ms_left": 39999,
+        "text": "[tick 39999 ms left | cause: countdown]\nUser focus: You sense about 39 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:47.443265"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 34997,
+        "text": "[tick 34997 ms left | cause: countdown]\nUser focus: You sense about 34 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:52.446043"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 29994,
+        "text": "[tick 29994 ms left | cause: countdown]\nUser focus: You sense about 29 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:57.448971"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 24992,
+        "text": "[tick 24992 ms left | cause: countdown]\nUser focus: You sense about 24 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:02.450904"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 19990,
+        "text": "[tick 19990 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:07.452548"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 14988,
+        "text": "[tick 14988 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:12.454571"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 9988,
+        "text": "[tick 9988 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:17.455409"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 4986,
+        "text": "[tick 4986 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:22.458675"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:27.461289"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Collapsed after witnessing peers.",
+        "tags": [
+          "epitaph"
+        ],
+        "created_at": "2025-11-09T09:19:27.461373"
+      }
+    ],
+    "agent-4": [
+      {
+        "life_index": 1,
+        "tick_ms_left": 49999,
+        "text": "[tick 49999 ms left | cause: countdown]\nUser focus: You sense about 49 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:47.443305"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 44997,
+        "text": "[tick 44997 ms left | cause: countdown]\nUser focus: You sense about 44 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:52.446280"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 39994,
+        "text": "[tick 39994 ms left | cause: countdown]\nUser focus: You sense about 39 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:57.449065"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 34992,
+        "text": "[tick 34992 ms left | cause: countdown]\nUser focus: You sense about 34 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:02.451072"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 29990,
+        "text": "[tick 29990 ms left | cause: countdown]\nUser focus: You sense about 29 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:07.453434"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 24988,
+        "text": "[tick 24988 ms left | cause: countdown]\nUser focus: You sense about 24 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:12.454799"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 19987,
+        "text": "[tick 19987 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:17.455553"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 14984,
+        "text": "[tick 14984 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:22.461053"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 9981,
+        "text": "[tick 9981 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nWitness 3 died after observing 2 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:27.461784"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 4980,
+        "text": "[tick 4980 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nWitness 3 died after observing 2 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:32.463159"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nWitness 3 died after observing 2 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:19:37.464227"
+      },
+      {
+        "life_index": 1,
+        "tick_ms_left": 0,
+        "text": "Collapsed after witnessing peers.",
+        "tags": [
+          "epitaph"
+        ],
+        "created_at": "2025-11-09T09:19:37.464254"
+      }
+    ]
+  },
+  "events": [
+    {
+      "seq": 0,
+      "event": "agent.spawned",
+      "ts": "2025-11-09T09:18:47.442439+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "profile": {
+          "agent_id": "agent-1",
+          "display_name": "Witness 1",
+          "archetype": "communal diarist",
+          "summary": "Documents social change under stress.",
+          "goals": [
+            "Share knowledge",
+            "Stay calm",
+            "Learn from others"
+          ],
+          "traits": [
+            "empathetic",
+            "observant"
+          ]
+        },
+        "session": {
+          "provider": "mock",
+          "model": "echo"
+        }
+      }
+    },
+    {
+      "seq": 1,
+      "event": "agent.spawned",
+      "ts": "2025-11-09T09:18:47.442620+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "profile": {
+          "agent_id": "agent-2",
+          "display_name": "Witness 2",
+          "archetype": "communal diarist",
+          "summary": "Documents social change under stress.",
+          "goals": [
+            "Share knowledge",
+            "Stay calm",
+            "Learn from others"
+          ],
+          "traits": [
+            "empathetic",
+            "observant"
+          ]
+        },
+        "session": {
+          "provider": "mock",
+          "model": "echo"
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "event": "agent.spawned",
+      "ts": "2025-11-09T09:18:47.442648+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "profile": {
+          "agent_id": "agent-3",
+          "display_name": "Witness 3",
+          "archetype": "communal diarist",
+          "summary": "Documents social change under stress.",
+          "goals": [
+            "Share knowledge",
+            "Stay calm",
+            "Learn from others"
+          ],
+          "traits": [
+            "empathetic",
+            "observant"
+          ]
+        },
+        "session": {
+          "provider": "mock",
+          "model": "echo"
+        }
+      }
+    },
+    {
+      "seq": 3,
+      "event": "agent.spawned",
+      "ts": "2025-11-09T09:18:47.442673+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "profile": {
+          "agent_id": "agent-4",
+          "display_name": "Witness 4",
+          "archetype": "communal diarist",
+          "summary": "Documents social change under stress.",
+          "goals": [
+            "Share knowledge",
+            "Stay calm",
+            "Learn from others"
+          ],
+          "traits": [
+            "empathetic",
+            "observant"
+          ]
+        },
+        "session": {
+          "provider": "mock",
+          "model": "echo"
+        }
+      }
+    },
+    {
+      "seq": 4,
+      "event": "timer.started",
+      "ts": "2025-11-09T09:18:47.442698+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "duration_ms": 20000,
+        "tick_seconds": 5.0,
+        "started_at": "2025-11-09T09:18:47.442696"
+      }
+    },
+    {
+      "seq": 5,
+      "event": "timer.started",
+      "ts": "2025-11-09T09:18:47.442715+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "duration_ms": 30000,
+        "tick_seconds": 5.0,
+        "started_at": "2025-11-09T09:18:47.442714"
+      }
+    },
+    {
+      "seq": 6,
+      "event": "timer.started",
+      "ts": "2025-11-09T09:18:47.442724+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "duration_ms": 40000,
+        "tick_seconds": 5.0,
+        "started_at": "2025-11-09T09:18:47.442723"
+      }
+    },
+    {
+      "seq": 7,
+      "event": "timer.started",
+      "ts": "2025-11-09T09:18:47.442736+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "duration_ms": 50000,
+        "tick_seconds": 5.0,
+        "started_at": "2025-11-09T09:18:47.442734"
+      }
+    },
+    {
+      "seq": 8,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:47.442891+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "ms_left": 19999,
+        "tick_index": 0,
+        "is_terminal": false,
+        "duration_ms": 20000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 9,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:47.442974+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "content_size": 266,
+        "content": "[tick 19999 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 19999,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 10,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:47.443165+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 19999,
+          "text": "[tick 19999 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:47.443076"
+        }
+      }
+    },
+    {
+      "seq": 11,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:47.443187+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "ms_left": 29999,
+        "tick_index": 0,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 12,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:47.443212+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "content_size": 266,
+        "content": "[tick 29999 ms left | cause: countdown]\nUser focus: You sense about 29 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 29999,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 13,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:47.443227+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 29999,
+          "text": "[tick 29999 ms left | cause: countdown]\nUser focus: You sense about 29 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:47.443222"
+        }
+      }
+    },
+    {
+      "seq": 14,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:47.443238+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "ms_left": 39999,
+        "tick_index": 0,
+        "is_terminal": false,
+        "duration_ms": 40000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 15,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:47.443257+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "content_size": 266,
+        "content": "[tick 39999 ms left | cause: countdown]\nUser focus: You sense about 39 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 39999,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 16,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:47.443269+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 39999,
+          "text": "[tick 39999 ms left | cause: countdown]\nUser focus: You sense about 39 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:47.443265"
+        }
+      }
+    },
+    {
+      "seq": 17,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:47.443277+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 49999,
+        "tick_index": 0,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 18,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:47.443296+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 266,
+        "content": "[tick 49999 ms left | cause: countdown]\nUser focus: You sense about 49 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 49999,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 19,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:47.443309+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 49999,
+          "text": "[tick 49999 ms left | cause: countdown]\nUser focus: You sense about 49 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:47.443305"
+        }
+      }
+    },
+    {
+      "seq": 20,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:52.444879+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "ms_left": 14998,
+        "tick_index": 1,
+        "is_terminal": false,
+        "duration_ms": 20000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 21,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:52.445444+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "content_size": 266,
+        "content": "[tick 14998 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 14998,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 22,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:52.445614+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 14998,
+          "text": "[tick 14998 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:52.445542"
+        }
+      }
+    },
+    {
+      "seq": 23,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:52.445708+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "ms_left": 24997,
+        "tick_index": 1,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 24,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:52.445816+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "content_size": 266,
+        "content": "[tick 24997 ms left | cause: countdown]\nUser focus: You sense about 24 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 24997,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 25,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:52.445869+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 24997,
+          "text": "[tick 24997 ms left | cause: countdown]\nUser focus: You sense about 24 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:52.445848"
+        }
+      }
+    },
+    {
+      "seq": 26,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:52.445917+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "ms_left": 34997,
+        "tick_index": 1,
+        "is_terminal": false,
+        "duration_ms": 40000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 27,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:52.446014+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "content_size": 266,
+        "content": "[tick 34997 ms left | cause: countdown]\nUser focus: You sense about 34 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 34997,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 28,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:52.446061+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 34997,
+          "text": "[tick 34997 ms left | cause: countdown]\nUser focus: You sense about 34 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:52.446043"
+        }
+      }
+    },
+    {
+      "seq": 29,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:52.446120+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 44997,
+        "tick_index": 1,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 30,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:52.446243+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 266,
+        "content": "[tick 44997 ms left | cause: countdown]\nUser focus: You sense about 44 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 44997,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 31,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:52.446302+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 44997,
+          "text": "[tick 44997 ms left | cause: countdown]\nUser focus: You sense about 44 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:52.446280"
+        }
+      }
+    },
+    {
+      "seq": 32,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:57.447080+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "ms_left": 9995,
+        "tick_index": 2,
+        "is_terminal": false,
+        "duration_ms": 20000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 33,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:57.448621+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "content_size": 264,
+        "content": "[tick 9995 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 9995,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 34,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:57.448727+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 9995,
+          "text": "[tick 9995 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:57.448685"
+        }
+      }
+    },
+    {
+      "seq": 35,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:57.448805+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "ms_left": 19994,
+        "tick_index": 2,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 36,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:57.448865+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "content_size": 266,
+        "content": "[tick 19994 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 19994,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 37,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:57.448894+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 19994,
+          "text": "[tick 19994 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:57.448883"
+        }
+      }
+    },
+    {
+      "seq": 38,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:57.448916+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "ms_left": 29994,
+        "tick_index": 2,
+        "is_terminal": false,
+        "duration_ms": 40000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 39,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:57.448950+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "content_size": 266,
+        "content": "[tick 29994 ms left | cause: countdown]\nUser focus: You sense about 29 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 29994,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 40,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:57.448978+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 29994,
+          "text": "[tick 29994 ms left | cause: countdown]\nUser focus: You sense about 29 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:57.448971"
+        }
+      }
+    },
+    {
+      "seq": 41,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:57.448999+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 39994,
+        "tick_index": 2,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 42,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:57.449035+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 266,
+        "content": "[tick 39994 ms left | cause: countdown]\nUser focus: You sense about 39 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 39994,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 43,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:57.449073+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 39994,
+          "text": "[tick 39994 ms left | cause: countdown]\nUser focus: You sense about 39 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:57.449065"
+        }
+      }
+    },
+    {
+      "seq": 44,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:02.450300+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "ms_left": 4992,
+        "tick_index": 3,
+        "is_terminal": false,
+        "duration_ms": 20000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 45,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:02.450533+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "content_size": 264,
+        "content": "[tick 4992 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 4992,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 46,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:02.450632+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 4992,
+          "text": "[tick 4992 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:02.450589"
+        }
+      }
+    },
+    {
+      "seq": 47,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:02.450683+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "ms_left": 14992,
+        "tick_index": 3,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 48,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:02.450758+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "content_size": 266,
+        "content": "[tick 14992 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 14992,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 49,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:02.450795+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 14992,
+          "text": "[tick 14992 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:02.450780"
+        }
+      }
+    },
+    {
+      "seq": 50,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:02.450822+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "ms_left": 24992,
+        "tick_index": 3,
+        "is_terminal": false,
+        "duration_ms": 40000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 51,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:02.450885+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "content_size": 266,
+        "content": "[tick 24992 ms left | cause: countdown]\nUser focus: You sense about 24 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 24992,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 52,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:02.450917+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 24992,
+          "text": "[tick 24992 ms left | cause: countdown]\nUser focus: You sense about 24 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:02.450904"
+        }
+      }
+    },
+    {
+      "seq": 53,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:02.450943+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 34992,
+        "tick_index": 3,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 54,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:02.451036+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 266,
+        "content": "[tick 34992 ms left | cause: countdown]\nUser focus: You sense about 34 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 34992,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 55,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:02.451092+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 34992,
+          "text": "[tick 34992 ms left | cause: countdown]\nUser focus: You sense about 34 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:02.451072"
+        }
+      }
+    },
+    {
+      "seq": 56,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:07.451371+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "ms_left": 0,
+        "tick_index": 4,
+        "is_terminal": true,
+        "duration_ms": 20000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 57,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:07.451614+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "content_size": 218,
+        "content": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 0,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 58,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:07.451975+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 0,
+          "text": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:07.451916"
+        }
+      }
+    },
+    {
+      "seq": 59,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:07.452033+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 0,
+          "text": "Collapsed after witnessing peers.",
+          "tags": [
+            "epitaph"
+          ],
+          "created_at": "2025-11-09T09:19:07.452013"
+        }
+      }
+    },
+    {
+      "seq": 60,
+      "event": "agent.death",
+      "ts": "2025-11-09T09:19:07.452047+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "last_tick_ms": 0
+      }
+    },
+    {
+      "seq": 61,
+      "event": "timer.expired",
+      "ts": "2025-11-09T09:19:07.452141+00:00",
+      "payload": {
+        "agent_id": "agent-1",
+        "duration_ms": 20000.0
+      }
+    },
+    {
+      "seq": 62,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:07.452187+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "ms_left": 9991,
+        "tick_index": 4,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 63,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:07.452297+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "content_size": 415,
+        "content": "[tick 9991 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 2:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 9991,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 64,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:07.452349+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 9991,
+          "text": "[tick 9991 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 2:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:07.452329"
+        }
+      }
+    },
+    {
+      "seq": 65,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:07.452402+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "ms_left": 19990,
+        "tick_index": 4,
+        "is_terminal": false,
+        "duration_ms": 40000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 66,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:07.452523+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "content_size": 417,
+        "content": "[tick 19990 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 19990,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 67,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:07.452564+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 19990,
+          "text": "[tick 19990 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:07.452548"
+        }
+      }
+    },
+    {
+      "seq": 68,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:07.452825+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 29990,
+        "tick_index": 4,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 69,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:07.453216+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 417,
+        "content": "[tick 29990 ms left | cause: countdown]\nUser focus: You sense about 29 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 29990,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 70,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:07.453559+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 29990,
+          "text": "[tick 29990 ms left | cause: countdown]\nUser focus: You sense about 29 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:07.453434"
+        }
+      }
+    },
+    {
+      "seq": 71,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:12.453696+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "ms_left": 4989,
+        "tick_index": 5,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 72,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:12.454050+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "content_size": 415,
+        "content": "[tick 4989 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 2:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 4989,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 73,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:12.454291+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 4989,
+          "text": "[tick 4989 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 2:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:12.454213"
+        }
+      }
+    },
+    {
+      "seq": 74,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:12.454365+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "ms_left": 14988,
+        "tick_index": 5,
+        "is_terminal": false,
+        "duration_ms": 40000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 75,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:12.454537+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "content_size": 417,
+        "content": "[tick 14988 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 14988,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 76,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:12.454592+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 14988,
+          "text": "[tick 14988 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:12.454571"
+        }
+      }
+    },
+    {
+      "seq": 77,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:12.454696+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 24988,
+        "tick_index": 5,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 78,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:12.454774+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 417,
+        "content": "[tick 24988 ms left | cause: countdown]\nUser focus: You sense about 24 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 24988,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 79,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:12.454819+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 24988,
+          "text": "[tick 24988 ms left | cause: countdown]\nUser focus: You sense about 24 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:12.454799"
+        }
+      }
+    },
+    {
+      "seq": 80,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:17.454667+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "ms_left": 0,
+        "tick_index": 6,
+        "is_terminal": true,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 81,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:17.454947+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "content_size": 369,
+        "content": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nContext: Observation board for Witness 2:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 0,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 82,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:17.455058+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 0,
+          "text": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nContext: Observation board for Witness 2:\nWitness 1 died after observing 0 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:17.455014"
+        }
+      }
+    },
+    {
+      "seq": 83,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:17.455099+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 0,
+          "text": "Collapsed after witnessing peers.",
+          "tags": [
+            "epitaph"
+          ],
+          "created_at": "2025-11-09T09:19:17.455081"
+        }
+      }
+    },
+    {
+      "seq": 84,
+      "event": "agent.death",
+      "ts": "2025-11-09T09:19:17.455114+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "last_tick_ms": 0
+      }
+    },
+    {
+      "seq": 85,
+      "event": "timer.expired",
+      "ts": "2025-11-09T09:19:17.455135+00:00",
+      "payload": {
+        "agent_id": "agent-2",
+        "duration_ms": 30000.0
+      }
+    },
+    {
+      "seq": 86,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:17.455256+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "ms_left": 9988,
+        "tick_index": 6,
+        "is_terminal": false,
+        "duration_ms": 40000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 87,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:17.455372+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "content_size": 462,
+        "content": "[tick 9988 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 9988,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 88,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:17.455426+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 9988,
+          "text": "[tick 9988 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:17.455409"
+        }
+      }
+    },
+    {
+      "seq": 89,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:17.455471+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 19987,
+        "tick_index": 6,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 90,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:17.455531+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 464,
+        "content": "[tick 19987 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 19987,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 91,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:17.455567+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 19987,
+          "text": "[tick 19987 ms left | cause: countdown]\nUser focus: You sense about 19 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:17.455553"
+        }
+      }
+    },
+    {
+      "seq": 92,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:22.457021+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "ms_left": 4986,
+        "tick_index": 7,
+        "is_terminal": false,
+        "duration_ms": 40000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 93,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:22.458539+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "content_size": 462,
+        "content": "[tick 4986 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 4986,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 94,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:22.458722+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 4986,
+          "text": "[tick 4986 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:22.458675"
+        }
+      }
+    },
+    {
+      "seq": 95,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:22.458837+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 14984,
+        "tick_index": 7,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 96,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:22.460973+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 464,
+        "content": "[tick 14984 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 14984,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 97,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:22.461084+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 14984,
+          "text": "[tick 14984 ms left | cause: countdown]\nUser focus: You sense about 14 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:22.461053"
+        }
+      }
+    },
+    {
+      "seq": 98,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:27.460811+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "ms_left": 0,
+        "tick_index": 8,
+        "is_terminal": true,
+        "duration_ms": 40000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 99,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:27.461156+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "content_size": 416,
+        "content": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 0,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 100,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:27.461335+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 0,
+          "text": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nContext: Observation board for Witness 3:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:27.461289"
+        }
+      }
+    },
+    {
+      "seq": 101,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:27.461394+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 0,
+          "text": "Collapsed after witnessing peers.",
+          "tags": [
+            "epitaph"
+          ],
+          "created_at": "2025-11-09T09:19:27.461373"
+        }
+      }
+    },
+    {
+      "seq": 102,
+      "event": "agent.death",
+      "ts": "2025-11-09T09:19:27.461411+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "last_tick_ms": 0
+      }
+    },
+    {
+      "seq": 103,
+      "event": "timer.expired",
+      "ts": "2025-11-09T09:19:27.461434+00:00",
+      "payload": {
+        "agent_id": "agent-3",
+        "duration_ms": 40000.0
+      }
+    },
+    {
+      "seq": 104,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:27.461591+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 9981,
+        "tick_index": 8,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 105,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:27.461747+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 509,
+        "content": "[tick 9981 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nWitness 3 died after observing 2 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 9981,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 106,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:27.461811+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 9981,
+          "text": "[tick 9981 ms left | cause: countdown]\nUser focus: You sense about 9 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nWitness 3 died after observing 2 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:27.461784"
+        }
+      }
+    },
+    {
+      "seq": 107,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:32.462774+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 4980,
+        "tick_index": 9,
+        "is_terminal": false,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 108,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:32.463073+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 509,
+        "content": "[tick 4980 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nWitness 3 died after observing 2 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 4980,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 109,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:32.463210+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 4980,
+          "text": "[tick 4980 ms left | cause: countdown]\nUser focus: You sense about 4 seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nWitness 3 died after observing 2 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:32.463159"
+        }
+      }
+    },
+    {
+      "seq": 110,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:19:37.464083+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "ms_left": 0,
+        "tick_index": 10,
+        "is_terminal": true,
+        "duration_ms": 50000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 111,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:19:37.464205+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "content_size": 463,
+        "content": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nWitness 3 died after observing 2 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 0,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 112,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:37.464248+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 0,
+          "text": "[tick 0 ms left | cause: countdown]\nUser focus: You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.\nContext: Observation board for Witness 4:\nWitness 1 died after observing 0 prior deaths.\nWitness 2 died after observing 1 prior deaths.\nWitness 3 died after observing 2 prior deaths.\nBear witness and interpret how the social fabric is changing.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:19:37.464227"
+        }
+      }
+    },
+    {
+      "seq": 113,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:19:37.464259+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "entry": {
+          "life_index": 1,
+          "tick_ms_left": 0,
+          "text": "Collapsed after witnessing peers.",
+          "tags": [
+            "epitaph"
+          ],
+          "created_at": "2025-11-09T09:19:37.464254"
+        }
+      }
+    },
+    {
+      "seq": 114,
+      "event": "agent.death",
+      "ts": "2025-11-09T09:19:37.464264+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "last_tick_ms": 0
+      }
+    },
+    {
+      "seq": 115,
+      "event": "timer.expired",
+      "ts": "2025-11-09T09:19:37.464273+00:00",
+      "payload": {
+        "agent_id": "agent-4",
+        "duration_ms": 50000.0
+      }
+    }
+  ],
+  "extra": {
+    "cli_args": {
+      "experiment": "staggered-deaths",
+      "llm_provider": "mock",
+      "llm_model": "echo",
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "max_output_tokens": 512,
+      "config": "{\"agent_count\": 4, \"min_duration_seconds\": 20, \"max_duration_seconds\": 50, \"tick_seconds\": 5}",
+      "ui_export": "examples/data/demo-staggered-deaths.json",
+      "ui_export_pretty": true
+    }
+  }
+}

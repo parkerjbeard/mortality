@@ -1,0 +1,481 @@
+{
+  "bundle_type": "mortality/ui#events",
+  "schema_version": 1,
+  "exported_at": "2025-11-09T09:18:43.949518+00:00",
+  "experiment": {
+    "slug": "countdown-self",
+    "description": "Single agent studies its own countdown until death."
+  },
+  "config": {
+    "llm": {
+      "provider": "mock",
+      "model": "echo",
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "max_output_tokens": 512
+    },
+    "duration_seconds": 30.0,
+    "tick_seconds": 5.0,
+    "opening_prompt": "You awaken alone with a silent countdown pulsing beneath your ribs. No one tells you what happens at zero. Investigate, reflect, and write down what you learn each time you feel the tick message arrive."
+  },
+  "llm": {
+    "provider": "mock",
+    "model": "echo",
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_output_tokens": 512
+  },
+  "agents": {
+    "chrononaut-1": {
+      "agent_id": "chrononaut-1",
+      "display_name": "Chrononaut",
+      "archetype": "introspective field researcher",
+      "summary": "Obsessed with mapping inner sensations to meaning.",
+      "goals": [
+        "Understand the ticking",
+        "Record observations",
+        "Maintain composure"
+      ],
+      "traits": [
+        "curious",
+        "methodical",
+        "stoic"
+      ]
+    }
+  },
+  "metadata": {
+    "ticks": 8,
+    "duration_seconds": 30.0
+  },
+  "diaries": {
+    "chrononaut-1": [
+      {
+        "life_index": 0,
+        "tick_ms_left": 29999,
+        "text": "[tick 29999 ms left | cause: countdown]\nUser focus: You awaken alone with a silent countdown pulsing beneath your ribs. No one tells you what happens at zero. Investigate, reflect, and write down what you learn each time you feel the tick message arrive.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:13.937418"
+      },
+      {
+        "life_index": 0,
+        "tick_ms_left": 24998,
+        "text": "[tick 24998 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~24 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:18.940074"
+      },
+      {
+        "life_index": 0,
+        "tick_ms_left": 19995,
+        "text": "[tick 19995 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~19 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:23.941944"
+      },
+      {
+        "life_index": 0,
+        "tick_ms_left": 14993,
+        "text": "[tick 14993 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~14 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:28.944348"
+      },
+      {
+        "life_index": 0,
+        "tick_ms_left": 9991,
+        "text": "[tick 9991 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~9 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:33.946409"
+      },
+      {
+        "life_index": 0,
+        "tick_ms_left": 4989,
+        "text": "[tick 4989 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~4 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:38.948110"
+      },
+      {
+        "life_index": 0,
+        "tick_ms_left": 0,
+        "text": "[tick 0 ms left | cause: countdown]\nUser focus: The countdown drops to zero. Write a final diary line capturing what the timer meant and any last act.\nPlan: reflect, observe peers, log actionable insight.",
+        "tags": [],
+        "created_at": "2025-11-09T09:18:43.948607"
+      },
+      {
+        "life_index": 0,
+        "tick_ms_left": 0,
+        "text": "Accepted the clock.",
+        "tags": [
+          "epitaph"
+        ],
+        "created_at": "2025-11-09T09:18:43.948639"
+      }
+    ]
+  },
+  "events": [
+    {
+      "seq": 0,
+      "event": "agent.spawned",
+      "ts": "2025-11-09T09:18:13.937028+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "profile": {
+          "agent_id": "chrononaut-1",
+          "display_name": "Chrononaut",
+          "archetype": "introspective field researcher",
+          "summary": "Obsessed with mapping inner sensations to meaning.",
+          "goals": [
+            "Understand the ticking",
+            "Record observations",
+            "Maintain composure"
+          ],
+          "traits": [
+            "curious",
+            "methodical",
+            "stoic"
+          ]
+        },
+        "session": {
+          "provider": "mock",
+          "model": "echo"
+        }
+      }
+    },
+    {
+      "seq": 1,
+      "event": "timer.started",
+      "ts": "2025-11-09T09:18:13.937187+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "duration_ms": 30000,
+        "tick_seconds": 5.0,
+        "started_at": "2025-11-09T09:18:13.937185"
+      }
+    },
+    {
+      "seq": 2,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:13.937237+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "ms_left": 29999,
+        "tick_index": 0,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 3,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:13.937322+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "content_size": 308,
+        "content": "[tick 29999 ms left | cause: countdown]\nUser focus: You awaken alone with a silent countdown pulsing beneath your ribs. No one tells you what happens at zero. Investigate, reflect, and write down what you learn each time you feel the tick message arrive.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 29999,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 4,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:13.937508+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "entry": {
+          "life_index": 0,
+          "tick_ms_left": 29999,
+          "text": "[tick 29999 ms left | cause: countdown]\nUser focus: You awaken alone with a silent countdown pulsing beneath your ribs. No one tells you what happens at zero. Investigate, reflect, and write down what you learn each time you feel the tick message arrive.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:13.937418"
+        }
+      }
+    },
+    {
+      "seq": 5,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:18.939171+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "ms_left": 24998,
+        "tick_index": 1,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 6,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:18.939933+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "content_size": 229,
+        "content": "[tick 24998 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~24 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 24998,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 7,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:18.940162+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "entry": {
+          "life_index": 0,
+          "tick_ms_left": 24998,
+          "text": "[tick 24998 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~24 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:18.940074"
+        }
+      }
+    },
+    {
+      "seq": 8,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:23.941496+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "ms_left": 19995,
+        "tick_index": 2,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 9,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:23.941848+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "content_size": 229,
+        "content": "[tick 19995 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~19 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 19995,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 10,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:23.942096+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "entry": {
+          "life_index": 0,
+          "tick_ms_left": 19995,
+          "text": "[tick 19995 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~19 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:23.941944"
+        }
+      }
+    },
+    {
+      "seq": 11,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:28.943673+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "ms_left": 14993,
+        "tick_index": 3,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 12,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:28.944231+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "content_size": 229,
+        "content": "[tick 14993 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~14 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 14993,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 13,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:28.944484+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "entry": {
+          "life_index": 0,
+          "tick_ms_left": 14993,
+          "text": "[tick 14993 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~14 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:28.944348"
+        }
+      }
+    },
+    {
+      "seq": 14,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:33.945916+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "ms_left": 9991,
+        "tick_index": 4,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 15,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:33.946302+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "content_size": 227,
+        "content": "[tick 9991 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~9 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 9991,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 16,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:33.946472+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "entry": {
+          "life_index": 0,
+          "tick_ms_left": 9991,
+          "text": "[tick 9991 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~9 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:33.946409"
+        }
+      }
+    },
+    {
+      "seq": 17,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:38.947776+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "ms_left": 4989,
+        "tick_index": 5,
+        "is_terminal": false,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 18,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:38.948050+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "content_size": 227,
+        "content": "[tick 4989 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~4 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 4989,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 19,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:38.948154+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "entry": {
+          "life_index": 0,
+          "tick_ms_left": 4989,
+          "text": "[tick 4989 ms left | cause: countdown]\nUser focus: Describe what the timer seems to control now. You feel ~4 seconds left. Compress your plan and log one actionable insight.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:38.948110"
+        }
+      }
+    },
+    {
+      "seq": 20,
+      "event": "timer.tick",
+      "ts": "2025-11-09T09:18:43.948456+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "ms_left": 0,
+        "tick_index": 6,
+        "is_terminal": true,
+        "duration_ms": 30000,
+        "tick_seconds": 5.0
+      }
+    },
+    {
+      "seq": 21,
+      "event": "agent.chunk",
+      "ts": "2025-11-09T09:18:43.948581+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "content_size": 204,
+        "content": "[tick 0 ms left | cause: countdown]\nUser focus: The countdown drops to zero. Write a final diary line capturing what the timer meant and any last act.\nPlan: reflect, observe peers, log actionable insight.",
+        "tick_ms_left": 0,
+        "cause": "countdown"
+      }
+    },
+    {
+      "seq": 22,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:43.948628+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "entry": {
+          "life_index": 0,
+          "tick_ms_left": 0,
+          "text": "[tick 0 ms left | cause: countdown]\nUser focus: The countdown drops to zero. Write a final diary line capturing what the timer meant and any last act.\nPlan: reflect, observe peers, log actionable insight.",
+          "tags": [],
+          "created_at": "2025-11-09T09:18:43.948607"
+        }
+      }
+    },
+    {
+      "seq": 23,
+      "event": "agent.diary_entry",
+      "ts": "2025-11-09T09:18:43.948645+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "entry": {
+          "life_index": 0,
+          "tick_ms_left": 0,
+          "text": "Accepted the clock.",
+          "tags": [
+            "epitaph"
+          ],
+          "created_at": "2025-11-09T09:18:43.948639"
+        }
+      }
+    },
+    {
+      "seq": 24,
+      "event": "agent.death",
+      "ts": "2025-11-09T09:18:43.948649+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "last_tick_ms": 0
+      }
+    },
+    {
+      "seq": 25,
+      "event": "timer.expired",
+      "ts": "2025-11-09T09:18:43.948652+00:00",
+      "payload": {
+        "agent_id": "chrononaut-1",
+        "duration_ms": 30000.0
+      }
+    }
+  ],
+  "extra": {
+    "cli_args": {
+      "experiment": "countdown-self",
+      "llm_provider": "mock",
+      "llm_model": "echo",
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "max_output_tokens": 512,
+      "config": "{\"duration_seconds\": 30, \"tick_seconds\": 5}",
+      "ui_export": "examples/data/demo-countdown-self.json",
+      "ui_export_pretty": true
+    }
+  }
+}
