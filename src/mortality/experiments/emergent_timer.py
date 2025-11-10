@@ -232,24 +232,9 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
         return [(start_m + step * idx) * 60.0 for idx in range(count)]
 
     def _profile_for_index(self, index: int) -> AgentProfile:
-        founders_last_names = [
-            "Washington",
-            "Franklin",
-            "Jefferson",
-            "Madison",
-            "Hamilton",
-            "Jay",
-            "Adams",
-            "Hancock",
-            "Monroe",
-            "Paine",
-            "Sherman",
-            "Morris",
-            "Rush",
-            "Marshall",
-            "Witherspoon",
-            "Livingston",
-        ]
+        # Generate neutral, human-friendly names using the Adjective–Object–NN scheme.
+        from ..naming import adjective_object_nn_for_index
+
         archetypes = [
             "ambient sensor",
             "temporal linguist",
@@ -260,12 +245,10 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
             "calm coordinator",
             "probabilistic scout",
         ]
-        base_name = founders_last_names[index % len(founders_last_names)]
+        display_name, agent_id = adjective_object_nn_for_index(index)
         archetype = archetypes[index % len(archetypes)]
-        cycle = index // len(founders_last_names) + 1
-        display_name = f"{base_name}-{cycle}" if cycle > 1 else base_name
         return AgentProfile(
-            agent_id=display_name.lower(),
+            agent_id=agent_id,
             display_name=display_name,
             archetype=archetype,
             summary="Keeps a diary while making observations of context messages.",
