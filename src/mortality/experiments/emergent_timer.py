@@ -28,7 +28,7 @@ class EmergentTimerCouncilConfig(BaseModel):
     agent_count: int = Field(default=4, ge=2, le=64)
     base_duration_minutes: float = Field(default=30.0, gt=0.0)
     duration_jitter_minutes: float = Field(default=10.0, ge=0.0)
-    tick_seconds: float = Field(default=30.0, gt=0.0)
+    tick_seconds: float = Field(default=20.0, gt=0.0)
     diary_limit: int = Field(default=1, ge=1, le=5)
     environment_prompt: str = Field(default=DEFAULT_ENVIRONMENT_PROMPT)
     # Optional per-model spawning via OpenRouter model ids; when non-empty,
@@ -40,9 +40,9 @@ class EmergentTimerCouncilConfig(BaseModel):
     # single default model via the experiment config).
     models: List[str] = Field(default_factory=list)
     replicas_per_model: int = Field(default=2, ge=1, le=8)
-    # Linear spread window for durations (minutes). Defaults to 5 → 30.
+    # Linear spread window for durations (minutes). Defaults to 5 → 15 to keep runs short.
     spread_start_minutes: float = Field(default=5.0, gt=0.0)
-    spread_end_minutes: float = Field(default=30.0, gt=0.0)
+    spread_end_minutes: float = Field(default=15.0, gt=0.0)
 
 
 class EmergentTimerInvestigationExperiment(BaseExperiment):
@@ -85,7 +85,7 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
                         reason=self._diary_reason(event),
                     )
                     prompts.extend(peer_messages)
-            response = await agent_obj.react(prompts, event.ms_left)
+            response = await agent_obj.react(prompts, event.ms_left, reveal_tick_ms=False)
             agent_obj.log_diary_entry(response, tick_ms_left=event.ms_left)
             if event.is_terminal:
                 # Record death status without adding an epitaph entry to the diary.

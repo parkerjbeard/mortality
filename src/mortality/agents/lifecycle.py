@@ -45,12 +45,14 @@ class MortalityAgent:
         self,
         messages: Sequence[LLMMessage],
         tick_ms_left: int,
+        reveal_tick_ms: bool = True,
         cause: str = "countdown",
     ) -> str:
         if self.state.status == LifecycleStatus.EXPIRED:
             raise RuntimeError(f"Agent {self.state.profile.agent_id} is already dead")
         async with self._io_lock:
-            tick = make_tick_tool_message(tick_ms_left, cause=cause)
+            payload_ms = tick_ms_left if reveal_tick_ms else None
+            tick = make_tick_tool_message(payload_ms, cause=cause)
             payload = [tick, *messages]
             for message in payload:
                 self._emit_message_event("inbound", message, tick_ms_left=tick_ms_left, cause=cause)

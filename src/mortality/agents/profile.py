@@ -33,7 +33,9 @@ class AgentProfile(BaseModel):
             "Avoid headings, bullets, numbered lists, or section labels; prefer short paragraphs. "
             "Vary sentence length and allow small asides or uncertainty. "
             "Quote peers sparingly and prefer brief paraphrases. "
-            "Do not use bold/italics/markdown; keep entries concise unless more detail is truly warranted."
+            "Do not use bold/italics/markdown; keep entries concise unless more detail is truly warranted. "
+            "Begin every diary entry with the shared universal clock timestamp (UTC) that all agents reference, "
+            "for example 2039-07-04 15:02 UTC – before the rest of the note."
         )
         return prompt
 

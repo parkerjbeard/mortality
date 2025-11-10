@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NormalizedBundle } from '@/lib/bundle'
 import { usePlayback } from '@/hooks/usePlayback'
 import { deriveAgentSnapshots } from '@/lib/derive'
@@ -11,6 +11,7 @@ const App = () => {
   const [bundle, setBundle] = useState<NormalizedBundle | null>(null)
   const timeline = bundle?.timeline ?? { startMs: 0, endMs: 1 }
   const playback = usePlayback(timeline)
+  const { seekMs, setSpeed, setPlaying } = playback
 
   const snapshots = useMemo(
     () => (bundle ? deriveAgentSnapshots(bundle, playback.playheadMs) : {}),
@@ -24,10 +25,14 @@ const App = () => {
 
   const handleBundleLoaded = (next: NormalizedBundle) => {
     setBundle(next)
-    playback.seekMs(next.timeline.startMs)
-    playback.setSpeed(1)
-    playback.setPlaying(true)
+    seekMs(next.timeline.startMs)
+    setSpeed(1)
   }
+
+  useEffect(() => {
+    if (!bundle) return
+    setPlaying(true)
+  }, [bundle, setPlaying])
 
   return (
     <div className="min-h-screen bg-canvas pb-16 text-slate-100">

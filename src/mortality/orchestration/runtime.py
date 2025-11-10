@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import datetime, timedelta, timezone
-from typing import Awaitable, Callable, Dict, Sequence
+from typing import Any, Awaitable, Callable, Dict, Sequence, Tuple
 
 from ..agents.lifecycle import MortalityAgent
 from ..agents.memory import AgentMemory
@@ -36,6 +37,7 @@ class MortalityRuntime:
         self._timer_tasks: Dict[str, asyncio.Task[None]] = {}
         self.shared_bus = shared_bus or SharedMCPBus()
         self._permission_handler_factory = permission_handler_factory or (lambda agent: AgentConsentPrompter(agent))
+        self._peer_entry_digests: Dict[Tuple[str, str], str] = {}
 
     async def spawn_agent(
         self,
@@ -139,7 +141,17 @@ class MortalityRuntime:
             scope=scope,
             reason=reason,
         )
-        return [resource.to_message() for resource in resources]
+        messages: list[LLMMessage] = []
+        for resource in resources:
+            if not resource.entries:
+                continue
+            key = (requestor_id, resource.owner_id)
+            digest = json.dumps(resource.entries, sort_keys=True)
+            if self._peer_entry_digests.get(key) == digest:
+                continue
+            self._peer_entry_digests[key] = digest
+            messages.append(resource.to_message())
+        return messages
 
     async def shutdown(self) -> None:
         for timer in self._timers.values():
@@ -149,6 +161,14 @@ class MortalityRuntime:
         self._timers.clear()
         self._timer_tasks.clear()
         await self._close_registered_clients()
+
+    def snapshot_diaries(self) -> Dict[str, list[Dict[str, Any]]]:
+        """Return the current diary entries for all spawned agents."""
+
+        snapshot: Dict[str, list[Dict[str, Any]]] = {}
+        for agent_id, agent in self._agents.items():
+            snapshot[agent_id] = agent.state.memory.diary.serialize()
+        return snapshot
 
     async def _close_registered_clients(self) -> None:
         closers = []

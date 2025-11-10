@@ -189,9 +189,37 @@ const buildDiaryConnectors = (
   return connectors
 }
 
+const normalizeIsoTimestamp = (value: string): string => {
+  if (typeof value !== 'string') {
+    return ''
+  }
+  let trimmed = value.trim()
+  if (!trimmed) {
+    return ''
+  }
+  // Safari struggles with space-separated timestamps; prefer ISO T separator.
+  trimmed = trimmed.replace(' ', 'T')
+  // Collapse timezone offsets like +00:00 into +0000 for broader compatibility.
+  trimmed = trimmed.replace(/([+-]\d{2}):(\d{2})$/, '$1$2')
+  // Limit fractional seconds to milliseconds to avoid precision parsing issues.
+  trimmed = trimmed.replace(/(\.\d{3})\d+/, '$1')
+  // Normalize trailing z to uppercase Z.
+  trimmed = trimmed.replace(/z$/, 'Z')
+  // Ensure a timezone designation exists; default to Z (UTC).
+  if (!/([zZ]|[+-]\d{4})$/.test(trimmed)) {
+    trimmed += 'Z'
+  }
+  return trimmed
+}
+
 export const safeDate = (value: string): number => {
-  const ts = Date.parse(value)
-  return Number.isFinite(ts) ? ts : Date.now()
+  const direct = Date.parse(value)
+  if (Number.isFinite(direct)) {
+    return direct
+  }
+  const normalized = normalizeIsoTimestamp(value)
+  const fallback = Date.parse(normalized)
+  return Number.isFinite(fallback) ? fallback : Date.now()
 }
 
 export const eventAgentId = (event: NormalizedEvent): string | undefined => {

@@ -103,10 +103,12 @@ class LLMClient(Protocol):
 TickToolName = "mortality.tick"
 
 
-def make_tick_tool_message(ms_left: int, cause: str = "countdown") -> LLMMessage:
+def make_tick_tool_message(ms_left: int | None, cause: str = "countdown") -> LLMMessage:
     """Encode a timer tick as a tool message for every provider."""
 
-    payload = {"t_ms_left": ms_left, "cause": cause}
+    payload = {"cause": cause}
+    if ms_left is not None:
+        payload["t_ms_left"] = ms_left
     return LLMMessage(role="tool", name=TickToolName, content=json.dumps(payload))
 
 

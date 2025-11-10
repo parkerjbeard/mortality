@@ -212,5 +212,30 @@ class MultiTelemetrySink(TelemetrySink):
                 # Best-effort; keep other sinks alive
                 pass
 
+    def build_bundle(
+        self,
+        *,
+        diaries: Dict[str, Any],
+        metadata: Dict[str, Any],
+        experiment: Dict[str, Any],
+        config: Dict[str, Any],
+        llm: Dict[str, Any],
+        extra: Dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        for sink in self._sinks:
+            build_bundle = getattr(sink, "build_bundle", None)
+            if callable(build_bundle):
+                return build_bundle(
+                    diaries=diaries,
+                    metadata=metadata,
+                    experiment=experiment,
+                    config=config,
+                    llm=llm,
+                    extra=extra,
+                )
+        raise AttributeError(
+            "MultiTelemetrySink requires at least one sink that implements build_bundle"
+        )
+
 
 __all__ = ["ConsoleTelemetrySink", "MultiTelemetrySink"]
