@@ -4,14 +4,11 @@ import { usePlayback } from '@/hooks/usePlayback'
 import { deriveAgentSnapshots } from '@/lib/derive'
 import { BundleLoader } from '@/components/BundleLoader'
 import { PlaybackBar } from '@/components/PlaybackBar'
-import { ViewToggle } from '@/components/ViewToggle'
 import { BoardView } from '@/components/BoardView'
-import { TimelineView } from '@/components/TimelineView'
 import { formatDuration, formatTimestamp } from '@/lib/time'
 
 const App = () => {
   const [bundle, setBundle] = useState<NormalizedBundle | null>(null)
-  const [view, setView] = useState<'board' | 'timeline'>('board')
   const timeline = bundle?.timeline ?? { startMs: 0, endMs: 1 }
   const playback = usePlayback(timeline)
 
@@ -28,15 +25,9 @@ const App = () => {
   const handleBundleLoaded = (next: NormalizedBundle) => {
     setBundle(next)
     playback.seekMs(next.timeline.startMs)
-    playback.setPlaying(false)
+    playback.setSpeed(1)
+    playback.setPlaying(true)
   }
-
-  const llmProvider =
-    bundle && typeof bundle.raw.llm.provider === 'string'
-      ? bundle.raw.llm.provider
-      : 'Custom LLM'
-  const llmModel =
-    bundle && typeof bundle.raw.llm.model === 'string' ? bundle.raw.llm.model : 'Model'
 
   return (
     <div className="min-h-screen bg-canvas pb-16 text-slate-100">
@@ -45,14 +36,14 @@ const App = () => {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">
-                Mortality Observer
+                Emergent Timer Observatory
               </p>
               <h1 className="text-3xl font-semibold text-white">
-                {bundle?.raw.experiment.slug ?? 'Observation console'}
+                {bundle?.raw.experiment.slug ?? 'Awaiting emergent council run'}
               </h1>
               <p className="max-w-xl text-sm text-slate-400">
                 {bundle?.raw.experiment.description ??
-                  'Load a telemetry bundle to watch emergent behaviour play out across long-form agent lives.'}
+                  'Drop in a fresh emergent-timers export to watch the countdown council negotiate, trade diary excerpts, and witness shutdowns live.'}
               </p>
             </div>
             <BundleLoader onLoaded={handleBundleLoaded} />
@@ -60,16 +51,20 @@ const App = () => {
           {bundle && (
             <div className="grid gap-3 md:grid-cols-3">
               <Stat
-                label="Agents"
+                label="Active Agents"
                 value={bundle.agentOrder.length.toString()}
-                hint="active participants"
+                hint="council participants"
               />
               <Stat
-                label="Recorded Window"
+                label="Countdown Window"
                 value={formatDuration(bundle.timeline.durationMs)}
                 hint={`${formatTimestamp(bundle.timeline.startMs)} → ${formatTimestamp(bundle.timeline.endMs)}`}
               />
-              <Stat label="LLM Provider" value={llmProvider} hint={llmModel} />
+              <Stat
+                label="Timer Spread"
+                value={formatDurationSpread(bundle)}
+                hint={`Tick cadence ${formatTickSeconds(bundle)}`}
+              />
             </div>
           )}
         </header>
@@ -93,27 +88,31 @@ const App = () => {
                 </span>
               </span>
             </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <LiveBadge
+                active={
+                  playback.playing &&
+                  playback.playheadMs < bundle.timeline.endMs
+                }
+              />
+              <span className="text-xs text-slate-500">
+                {playback.playing
+                  ? 'Auto-following the council in real time'
+                  : 'Paused — drag or press play to resume'}
+              </span>
+            </div>
             <PlaybackBar playback={playback} bundle={bundle} />
-            <ViewToggle view={view} onChange={setView} />
-            {view === 'board' ? (
-              <BoardView
-                bundle={bundle}
-                snapshots={snapshots}
-                events={eventsForView}
-                playback={playback}
-              />
-            ) : (
-              <TimelineView
-                bundle={bundle}
-                snapshots={snapshots}
-                playback={playback}
-              />
-            )}
+            <BoardView
+              bundle={bundle}
+              snapshots={snapshots}
+              events={eventsForView}
+              playback={playback}
+            />
           </>
         ) : (
           <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-10 text-center text-slate-400">
-            Load a telemetry bundle to unlock both dashboards. Use the CLI export
-            flag or the sample files to get started.
+            Run <code>just emergent-run</code> (OpenRouter required) or drop a
+            recorded JSON bundle to stream the investigation as it happened.
           </div>
         )}
       </div>
@@ -133,6 +132,41 @@ const Stat = ({ label, value, hint }: StatProps) => (
     <p className="text-2xl font-semibold text-white">{value}</p>
     {hint && <p className="text-xs text-slate-500">{hint}</p>}
   </div>
+)
+
+const formatDurationSpread = (bundle: NormalizedBundle) => {
+  const durations = Array.isArray(bundle.raw.metadata?.durations)
+    ? (bundle.raw.metadata.durations as number[])
+    : null
+  if (!durations || durations.length === 0) {
+    return formatDuration(bundle.timeline.durationMs)
+  }
+  const minutes = durations.map((seconds) => seconds / 60)
+  const min = Math.min(...minutes)
+  const max = Math.max(...minutes)
+  if (min === max) {
+    return `${min.toFixed(1)}m`
+  }
+  return `${min.toFixed(1)}m – ${max.toFixed(1)}m`
+}
+
+const formatTickSeconds = (bundle: NormalizedBundle) => {
+  const tick = Number(bundle.raw.config?.tick_seconds)
+  if (Number.isFinite(tick) && tick > 0) {
+    return `${tick.toFixed(0)}s`
+  }
+  return '—'
+}
+
+const LiveBadge = ({ active }: { active: boolean }) => (
+  <span
+    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide ${active ? 'bg-danger/30 text-danger' : 'bg-white/5 text-slate-400'}`}
+  >
+    <span
+      className={`mr-1 inline-block h-2 w-2 rounded-full ${active ? 'bg-danger animate-pulse' : 'bg-slate-500'}`}
+    />
+    {active ? 'Live' : 'Paused'}
+  </span>
 )
 
 export default App

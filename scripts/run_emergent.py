@@ -11,17 +11,19 @@ from mortality.experiments.registry import ExperimentRegistry
 from mortality.llm.base import LLMProvider
 from mortality.orchestration.runtime import MortalityRuntime
 from mortality.telemetry.recorder import StructuredTelemetrySink
+from mortality.telemetry.console import ConsoleTelemetrySink, MultiTelemetrySink
 
 
 async def main() -> None:
     if not os.getenv("OPENROUTER_API_KEY"):
         raise SystemExit("OPENROUTER_API_KEY must be set in environment")
 
-    telemetry = StructuredTelemetrySink()
+    # Emit both: structured bundle for later UI + live, colorized console logs.
+    telemetry = MultiTelemetrySink([StructuredTelemetrySink(), ConsoleTelemetrySink()])
     runtime = MortalityRuntime(telemetry=telemetry)
     experiment = ExperimentRegistry().get("emergent-timers")
 
-    spread_start = float(os.getenv("MORTALITY_EMERGENT_SPREAD_START", "0.5"))
+    spread_start = float(os.getenv("MORTALITY_EMERGENT_SPREAD_START", "5.0"))
     spread_end = float(os.getenv("MORTALITY_EMERGENT_SPREAD_END", "30.0"))
     tick_seconds = float(os.getenv("OPENROUTER_TICK_SECONDS", "30"))
     replicas = int(os.getenv("MORTALITY_REPLICAS_PER_MODEL", "2"))

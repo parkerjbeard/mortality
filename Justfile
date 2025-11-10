@@ -72,7 +72,7 @@ emergent-run: install env
   : "${OPENROUTER_API_KEY:?OPENROUTER_API_KEY is required for emergent-run}"
   : "${OPENROUTER_REASONING:=low}"
   : "${OPENROUTER_TICK_SECONDS:=30}"
-  : "${MORTALITY_EMERGENT_SPREAD_START:=0.5}"
+  : "${MORTALITY_EMERGENT_SPREAD_START:=5.0}"
   : "${MORTALITY_EMERGENT_SPREAD_END:=30.0}"
   : "${MORTALITY_REPLICAS_PER_MODEL:=2}"
   PYTHONPATH=src {{PY}} scripts/run_emergent.py

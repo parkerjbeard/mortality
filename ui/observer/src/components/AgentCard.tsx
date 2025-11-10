@@ -1,16 +1,24 @@
 import { AgentSnapshot } from '@/lib/derive'
 import { formatCountdown, formatDuration } from '@/lib/time'
 import clsx from 'clsx'
+import { AgentModelBadge } from './AgentModelBadge'
 
 interface AgentCardProps {
   snapshot: AgentSnapshot
   onSelect: () => void
   selected: boolean
+  modelLabel: string
 }
 
-export const AgentCard = ({ snapshot, onSelect, selected }: AgentCardProps) => {
+export const AgentCard = ({
+  snapshot,
+  onSelect,
+  selected,
+  modelLabel,
+}: AgentCardProps) => {
   const statusTone = getStatusTone(snapshot.status)
-  const timerLabel = snapshot.msLeft !== null ? formatCountdown(snapshot.msLeft) : '—'
+  const timerLabel =
+    snapshot.msLeft !== null ? formatCountdown(snapshot.msLeft) : '—'
   const spanLabel =
     typeof snapshot.timerDurationMs === 'number' && snapshot.timerDurationMs > 0
       ? formatDuration(snapshot.timerDurationMs)
@@ -23,13 +31,22 @@ export const AgentCard = ({ snapshot, onSelect, selected }: AgentCardProps) => {
       onClick={onSelect}
       className={clsx(
         'flex flex-col gap-3 rounded-3xl border p-4 text-left transition',
-        selected ? 'border-accent/40 bg-accent/5' : 'border-white/5 bg-panel/30 hover:border-white/20',
+        selected
+          ? 'border-accent/40 bg-accent/5'
+          : 'border-white/5 bg-panel/30 hover:border-white/20',
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">{snapshot.profile.archetype}</p>
-          <h4 className="text-lg font-semibold text-white">{snapshot.profile.display_name}</h4>
+          <p className="text-xs uppercase tracking-wide text-slate-500">
+            {snapshot.profile.archetype}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-lg font-semibold text-white">
+              {snapshot.profile.display_name}
+            </h4>
+            <AgentModelBadge label={modelLabel} />
+          </div>
         </div>
         <span
           className={clsx(
@@ -44,7 +61,8 @@ export const AgentCard = ({ snapshot, onSelect, selected }: AgentCardProps) => {
       <p className="text-sm text-slate-300 line-clamp-3">{insight}</p>
       {snapshot.lastChunk && (
         <p className="text-xs text-slate-500 line-clamp-2">
-          <span className="font-semibold text-slate-300">Stream:</span> {snapshot.lastChunk}
+          <span className="font-semibold text-slate-300">Stream:</span>{' '}
+          {snapshot.lastChunk}
         </p>
       )}
       <div className="text-xs text-slate-500">
@@ -53,7 +71,9 @@ export const AgentCard = ({ snapshot, onSelect, selected }: AgentCardProps) => {
           <span>{spanLabel}</span>
         </div>
         <div className="mt-1 flex items-center justify-between">
-          <span>Tick: {snapshot.tickSeconds ? `${snapshot.tickSeconds}s` : '—'}</span>
+          <span>
+            Tick: {snapshot.tickSeconds ? `${snapshot.tickSeconds}s` : '—'}
+          </span>
           <span>{timerLabel} left</span>
         </div>
       </div>

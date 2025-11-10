@@ -1,6 +1,11 @@
-import { NormalizedBundle, NormalizedEvent } from '@/lib/bundle'
+import {
+  NormalizedBundle,
+  NormalizedEvent,
+  getAgentModelLabel,
+} from '@/lib/bundle'
 import { groupDiariesByLife } from '@/lib/derive'
 import { formatTimestamp } from '@/lib/time'
+import { AgentModelBadge } from './AgentModelBadge'
 
 interface AgentDrawerProps {
   agentId: string
@@ -19,6 +24,7 @@ export const AgentDrawer = ({
 }: AgentDrawerProps) => {
   const profile = bundle.agents[agentId]
   if (!profile) return null
+  const modelLabel = getAgentModelLabel(bundle, agentId)
   const diaries = (bundle.diaries[agentId] ?? []).filter(
     (entry) => entry.createdAtMs <= playheadMs,
   )
@@ -31,6 +37,15 @@ export const AgentDrawer = ({
     .slice(-40)
     .reverse()
 
+  // Recent inbound/outbound message events for this agent
+  const messages = events
+    .filter(
+      (event) =>
+        event.event === 'agent.message' && event.payload.agent_id === agentId,
+    )
+    .slice(-60)
+    .reverse()
+
   return (
     <div className="fixed inset-0 z-40 flex">
       <div className="flex-1 bg-black/60 backdrop-blur" onClick={onClose} />
@@ -40,9 +55,12 @@ export const AgentDrawer = ({
             <p className="text-xs uppercase tracking-wide text-slate-400">
               {profile.archetype}
             </p>
-            <h2 className="text-2xl font-semibold text-white">
-              {profile.display_name}
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-2xl font-semibold text-white">
+                {profile.display_name}
+              </h2>
+              <AgentModelBadge label={modelLabel} />
+            </div>
             <p className="text-sm text-slate-300">{profile.summary}</p>
           </div>
           <button
@@ -54,6 +72,7 @@ export const AgentDrawer = ({
           </button>
         </header>
         <div className="mt-6 space-y-6">
+          {/* Diary entries remain grouped by life to emphasize reflection vs. interaction */}
           {diaryGroups.map((group) => (
             <section key={group.lifeIndex}>
               <h3 className="text-sm font-semibold text-white">
@@ -92,9 +111,54 @@ export const AgentDrawer = ({
               </ul>
             </section>
           ))}
+          {/* Delineated Agent Interaction Messages (discrete turns) */}
+          <section>
+            <h3 className="text-sm font-semibold text-white">Messages</h3>
+            <ul className="mt-2 space-y-2 text-sm text-slate-200">
+              {messages.map((event) => {
+                const direction = String(event.payload.direction || '')
+                const role = String(
+                  (event.payload.message?.role as string) || '',
+                )
+                const content = String(
+                  (event.payload.message?.content as string) || '',
+                )
+                return (
+                  <li
+                    key={`msg-${event.seq}`}
+                    className="rounded-xl border border-white/5 bg-white/5 p-3"
+                  >
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 uppercase tracking-wide">
+                          {direction || '—'}
+                        </span>
+                        {role && (
+                          <span className="rounded-full bg-white/10 px-2 py-0.5 uppercase tracking-wide">
+                            {role}
+                          </span>
+                        )}
+                      </span>
+                      <span>{formatTimestamp(event.tsMs)}</span>
+                    </div>
+                    {content && (
+                      <p className="mt-1 whitespace-pre-wrap text-slate-100">
+                        {content}
+                      </p>
+                    )}
+                  </li>
+                )
+              })}
+              {messages.length === 0 && (
+                <li className="text-xs text-slate-500">
+                  No messages recorded during this window.
+                </li>
+              )}
+            </ul>
+          </section>
           <section>
             <h3 className="text-sm font-semibold text-white">
-              Streamed Interactions
+              Streaming Output
             </h3>
             <ul className="mt-2 space-y-2 text-sm text-slate-200">
               {chunks.map((event) => (

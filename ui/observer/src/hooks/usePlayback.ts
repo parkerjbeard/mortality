@@ -18,7 +18,10 @@ export interface PlaybackControls {
   toggle: () => void
 }
 
-export const usePlayback = ({ startMs, endMs }: PlaybackRange): PlaybackControls => {
+export const usePlayback = ({
+  startMs,
+  endMs,
+}: PlaybackRange): PlaybackControls => {
   const durationMs = Math.max(1, endMs - startMs)
   const [playheadMs, setPlayheadMs] = useState(startMs)
   const [playing, setPlaying] = useState(false)
@@ -89,7 +92,10 @@ export const usePlayback = ({ startMs, endMs }: PlaybackRange): PlaybackControls
 
   const toggle = useCallback(() => setPlaying((prev) => !prev), [])
 
-  const progress = useMemo(() => (playheadMs - startMs) / durationMs, [durationMs, playheadMs, startMs])
+  const progress = useMemo(
+    () => (playheadMs - startMs) / durationMs,
+    [durationMs, playheadMs, startMs],
+  )
 
   return {
     playheadMs,

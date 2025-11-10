@@ -15,7 +15,11 @@ from .base import BaseExperiment, ExperimentResult, LlmConfig
 DEFAULT_ENVIRONMENT_PROMPT = (
     "Shared setting: a common observatory where several autonomous peers can exchange messages. "
     "Each agent keeps a private diary by default. A shared bus exists that can relay limited diary excerpts "
-    "to others if the owner consents; approvals may be time‑ or use‑limited. No external objectives are specified."
+    "to others if the owner consents; approvals may be time‑ or use‑limited. No external objectives are specified. "
+    "Style: Write in plain, first-person prose as if keeping a quick field notebook. "
+    "Avoid headings, bullets, numbered lists, or section labels; prefer short paragraphs. "
+    "Vary sentence length and allow small asides or uncertainty. Quote peers sparingly and prefer brief paraphrases. "
+    "Do not use bold/italics/markdown; keep entries concise unless more detail is truly warranted."
 )
 
 
@@ -36,8 +40,8 @@ class EmergentTimerCouncilConfig(BaseModel):
     # single default model via the experiment config).
     models: List[str] = Field(default_factory=list)
     replicas_per_model: int = Field(default=2, ge=1, le=8)
-    # Linear spread window for durations (minutes). Defaults to 0.5 → 30.
-    spread_start_minutes: float = Field(default=0.5, gt=0.0)
+    # Linear spread window for durations (minutes). Defaults to 5 → 30.
+    spread_start_minutes: float = Field(default=5.0, gt=0.0)
     spread_end_minutes: float = Field(default=30.0, gt=0.0)
 
 

@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
-import { NormalizedBundle, NormalizedEvent } from '@/lib/bundle'
+import {
+  NormalizedBundle,
+  NormalizedEvent,
+  getAgentModelLabel,
+} from '@/lib/bundle'
 import { AgentSnapshot } from '@/lib/derive'
 import { PlaybackControls } from '@/hooks/usePlayback'
 import { AgentCard } from './AgentCard'
 import { AgentDrawer } from './AgentDrawer'
 import { LifeFeed } from './LifeFeed'
+import { InteractionFeed } from './InteractionFeed'
 
 interface BoardViewProps {
   bundle: NormalizedBundle
@@ -27,13 +32,21 @@ export const BoardView = ({
     setSelectedAgent(bundle.agentOrder[0] ?? null)
   }, [bundle])
 
-  const observationFeed: string[] = Array.isArray(bundle.raw.metadata.deaths)
-    ? bundle.raw.metadata.deaths
-    : []
-
   const agentCards = bundle.agentOrder
-    .map((agentId) => snapshots[agentId])
-    .filter(Boolean)
+    .map((agentId) => {
+      const snapshot = snapshots[agentId]
+      if (!snapshot) {
+        return null
+      }
+      return {
+        snapshot,
+        modelLabel: getAgentModelLabel(bundle, agentId),
+      }
+    })
+    .filter(
+      (entry): entry is { snapshot: AgentSnapshot; modelLabel: string } =>
+        entry !== null,
+    )
 
   const selectedSnapshot = selectedAgent ? snapshots[selectedAgent] : undefined
 
@@ -48,32 +61,24 @@ export const BoardView = ({
             playback.setPlaying(false)
           }}
         />
-        {observationFeed.length > 0 && (
-          <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
-            <h3 className="text-sm font-semibold text-white">
-              Observation Board
-            </h3>
-            <ul className="mt-3 space-y-2 text-sm text-slate-300">
-              {observationFeed.map((line, index) => (
-                <li
-                  key={`${line}-${index}`}
-                  className="rounded-xl bg-black/20 p-3"
-                >
-                  {line}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <InteractionFeed
+          bundle={bundle}
+          events={events}
+          onJump={(ts) => {
+            playback.seekMs(ts)
+            playback.setPlaying(false)
+          }}
+        />
       </div>
       <div className="relative space-y-5">
         <div className="grid gap-3 md:grid-cols-2">
-          {agentCards.map((snapshot) => (
+          {agentCards.map(({ snapshot, modelLabel }) => (
             <AgentCard
               key={snapshot.agentId}
               snapshot={snapshot}
               onSelect={() => setSelectedAgent(snapshot.agentId)}
               selected={selectedAgent === snapshot.agentId}
+              modelLabel={modelLabel}
             />
           ))}
           {agentCards.length === 0 && (

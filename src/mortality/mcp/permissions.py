@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from ..agents.lifecycle import MortalityAgent
+from ..agents.state import LifecycleStatus
 from ..llm.base import LLMMessage
 from .bus import DiaryAccessDecision, DiaryAccessRequest
 
@@ -26,6 +27,12 @@ class AgentConsentPrompter:
         self._default_ttl = default_ttl or timedelta(minutes=5)
 
     async def approve(self, request: DiaryAccessRequest) -> DiaryAccessDecision:
+        if self._agent.state.status == LifecycleStatus.EXPIRED:
+            return DiaryAccessDecision(
+                approved=True,
+                rationale="Auto-approved: owner expired",
+                expires_in_seconds=0,
+            )
         prompt = self._prompt_template.format(
             requestor_id=request.requestor_id,
             scope=request.scope.describe(),

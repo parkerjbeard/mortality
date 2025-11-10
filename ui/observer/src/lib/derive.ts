@@ -1,4 +1,10 @@
-import { AgentProfile, NormalizedBundle, NormalizedDiaryEntry, eventAgentId, safeDate } from './bundle'
+import {
+  AgentProfile,
+  NormalizedBundle,
+  NormalizedDiaryEntry,
+  eventAgentId,
+  safeDate,
+} from './bundle'
 
 export type AgentStatus = 'pending' | 'alive' | 'respawning' | 'expired'
 
@@ -14,7 +20,10 @@ export interface AgentSnapshot {
   lastChunk?: string
 }
 
-export const deriveAgentSnapshots = (bundle: NormalizedBundle, playheadMs: number): Record<string, AgentSnapshot> => {
+export const deriveAgentSnapshots = (
+  bundle: NormalizedBundle,
+  playheadMs: number,
+): Record<string, AgentSnapshot> => {
   const snapshots: Record<string, AgentSnapshot> = {}
   bundle.agentOrder.forEach((agentId) => {
     snapshots[agentId] = {
@@ -75,7 +84,8 @@ export const deriveAgentSnapshots = (bundle: NormalizedBundle, playheadMs: numbe
         break
       case 'agent.respawn':
         snapshot.status = 'respawning'
-        snapshot.lifeIndex = numberOrNull(event.payload.life_index) ?? snapshot.lifeIndex + 1
+        snapshot.lifeIndex =
+          numberOrNull(event.payload.life_index) ?? snapshot.lifeIndex + 1
         snapshot.msLeft = null
         snapshot.timerDurationMs = null
         break
@@ -92,7 +102,9 @@ export interface DiaryLifeGroup {
   entries: NormalizedDiaryEntry[]
 }
 
-export const groupDiariesByLife = (entries: NormalizedDiaryEntry[]): DiaryLifeGroup[] => {
+export const groupDiariesByLife = (
+  entries: NormalizedDiaryEntry[],
+): DiaryLifeGroup[] => {
   const groups = new Map<number, NormalizedDiaryEntry[]>()
   entries.forEach((entry) => {
     const list = groups.get(entry.life_index) ?? []
@@ -111,7 +123,9 @@ const numberOrNull = (value: unknown): number | null => {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
-const normalizeDiaryFromPayload = (value: unknown): NormalizedDiaryEntry | undefined => {
+const normalizeDiaryFromPayload = (
+  value: unknown,
+): NormalizedDiaryEntry | undefined => {
   if (!value || typeof value !== 'object') {
     return undefined
   }
@@ -121,10 +135,16 @@ const normalizeDiaryFromPayload = (value: unknown): NormalizedDiaryEntry | undef
   }
   return {
     life_index: typeof entry.life_index === 'number' ? entry.life_index : 0,
-    tick_ms_left: typeof entry.tick_ms_left === 'number' ? entry.tick_ms_left : 0,
+    tick_ms_left:
+      typeof entry.tick_ms_left === 'number' ? entry.tick_ms_left : 0,
     text: entry.text,
     tags: Array.isArray(entry.tags) ? entry.tags.map(String) : [],
-    created_at: typeof entry.created_at === 'string' ? entry.created_at : new Date().toISOString(),
-    createdAtMs: entry.createdAtMs ?? safeDate(entry.created_at ?? new Date().toISOString()),
+    created_at:
+      typeof entry.created_at === 'string'
+        ? entry.created_at
+        : new Date().toISOString(),
+    createdAtMs:
+      entry.createdAtMs ??
+      safeDate(entry.created_at ?? new Date().toISOString()),
   }
 }

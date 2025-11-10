@@ -26,7 +26,15 @@ class AgentProfile(BaseModel):
             prompt += f"Goals:\n{goals_text}\n"
         if traits_text:
             prompt += f"Traits: {traits_text}.\n"
-        prompt += "Stay aware that your remaining lifetime is streamed via tool ticks."
+
+        # Stylistic guidance: encourage natural, non-templated writing.
+        prompt += (
+            "Style: Write in plain, first-person prose as if keeping a quick field notebook. "
+            "Avoid headings, bullets, numbered lists, or section labels; prefer short paragraphs. "
+            "Vary sentence length and allow small asides or uncertainty. "
+            "Quote peers sparingly and prefer brief paraphrases. "
+            "Do not use bold/italics/markdown; keep entries concise unless more detail is truly warranted."
+        )
         return prompt
 
 

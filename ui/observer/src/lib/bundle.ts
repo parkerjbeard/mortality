@@ -53,6 +53,11 @@ export interface NormalizedEvent extends z.infer<typeof eventSchema> {
   tsMs: number
 }
 
+export interface AgentSessionInfo {
+  provider?: string
+  model?: string
+}
+
 export interface DiaryConnector {
   fromAgentId: string
   toAgentId: string
@@ -67,6 +72,7 @@ export interface NormalizedBundle {
   diaries: Record<string, NormalizedDiaryEntry[]>
   agents: Record<string, AgentProfile>
   agentOrder: string[]
+  agentSessions: Record<string, AgentSessionInfo>
   timeline: {
     startMs: number
     endMs: number
@@ -76,7 +82,10 @@ export interface NormalizedBundle {
 }
 
 export const parseBundle = (input: string | object): NormalizedBundle => {
-  const parsed = typeof input === 'string' ? bundleSchema.parse(JSON.parse(input)) : bundleSchema.parse(input)
+  const parsed =
+    typeof input === 'string'
+      ? bundleSchema.parse(JSON.parse(input))
+      : bundleSchema.parse(input)
   return normalizeBundle(parsed)
 }
 
@@ -103,7 +112,9 @@ const normalizeBundle = (raw: RawBundle): NormalizedBundle => {
 
   const allTs = [
     ...events.map((event) => event.tsMs),
-    ...Object.values(diaries).flat().map((entry) => entry.createdAtMs),
+    ...Object.values(diaries)
+      .flat()
+      .map((entry) => entry.createdAtMs),
   ].filter((value) => Number.isFinite(value))
 
   const defaultTs = Date.now()
@@ -124,6 +135,7 @@ const normalizeBundle = (raw: RawBundle): NormalizedBundle => {
     eventsByAgent[agentId].push(event)
   })
 
+  const agentSessions = extractAgentSessions(events)
   const connectors = buildDiaryConnectors(events, diaries)
 
   return {
@@ -133,6 +145,7 @@ const normalizeBundle = (raw: RawBundle): NormalizedBundle => {
     diaries,
     agents: raw.agents,
     agentOrder,
+    agentSessions,
     timeline: { startMs, endMs, durationMs },
     connectors,
   }
@@ -142,7 +155,9 @@ const buildDiaryConnectors = (
   events: NormalizedEvent[],
   diaries: Record<string, NormalizedDiaryEntry[]>,
 ): DiaryConnector[] => {
-  const deaths = events.filter((event) => event.event === 'agent.death' && event.payload.agent_id)
+  const deaths = events.filter(
+    (event) => event.event === 'agent.death' && event.payload.agent_id,
+  )
   const diaryList = Object.entries(diaries).flatMap(([agentId, entries]) =>
     entries.map((entry) => ({ ...entry, agentId })),
   )
@@ -187,9 +202,80 @@ export const eventAgentId = (event: NormalizedEvent): string | undefined => {
   if (typeof direct === 'number') {
     return String(direct)
   }
-  const nested = (event.payload.profile as { agent_id?: string } | undefined)?.agent_id
+  const nested = (event.payload.profile as { agent_id?: string } | undefined)
+    ?.agent_id
   if (nested) {
     return nested
   }
   return undefined
+}
+
+const extractAgentSessions = (
+  events: NormalizedEvent[],
+): Record<string, AgentSessionInfo> => {
+  const sessions: Record<string, AgentSessionInfo> = {}
+  events.forEach((event) => {
+    if (event.event !== 'agent.spawned') {
+      return
+    }
+    const agentId = eventAgentId(event)
+    if (!agentId) {
+      return
+    }
+    const sessionInfo = normalizeSessionInfo(event.payload?.session)
+    if (sessionInfo) {
+      sessions[agentId] = sessionInfo
+    }
+  })
+  return sessions
+}
+
+const normalizeSessionInfo = (value: unknown): AgentSessionInfo | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+  const input = value as Partial<AgentSessionInfo>
+  const provider =
+    typeof input.provider === 'string' ? input.provider.trim() : undefined
+  const model = typeof input.model === 'string' ? input.model.trim() : undefined
+  if (!provider && !model) {
+    return undefined
+  }
+  return { provider, model }
+}
+
+const formatSessionModelLabel = (
+  session?: AgentSessionInfo,
+): string | undefined => {
+  if (!session) {
+    return undefined
+  }
+  const provider = session.provider?.trim()
+  const model = session.model?.trim()
+  if (!model && !provider) {
+    return undefined
+  }
+  if (!model) {
+    return provider
+  }
+  if (
+    provider &&
+    !model.toLowerCase().startsWith(`${provider.toLowerCase()}/`)
+  ) {
+    return `${provider}/${model}`
+  }
+  return model
+}
+
+export const getAgentModelLabel = (
+  bundle: NormalizedBundle,
+  agentId: string,
+): string => {
+  const preferred = formatSessionModelLabel(bundle.agentSessions[agentId])
+  if (preferred) {
+    return preferred
+  }
+  const bundleModel =
+    typeof bundle.raw.llm.model === 'string' ? bundle.raw.llm.model.trim() : ''
+  return bundleModel || 'Unknown model'
 }

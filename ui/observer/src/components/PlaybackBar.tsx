@@ -26,19 +26,33 @@ export const PlaybackBar = ({ playback, bundle }: PlaybackBarProps) => {
           {playback.playing ? '❚❚' : '►'}
         </button>
         <div className="flex flex-col">
-          <span className="text-xs uppercase tracking-wide text-slate-500">Now</span>
-          <span className="text-lg font-semibold text-white">{formatTimestamp(playback.playheadMs)}</span>
+          <span className="text-xs uppercase tracking-wide text-slate-500">
+            Now
+          </span>
+          <span className="text-lg font-semibold text-white">
+            {formatTimestamp(playback.playheadMs)}
+          </span>
         </div>
         <div className="flex flex-col">
-          <span className="text-xs uppercase tracking-wide text-slate-500">Elapsed</span>
-          <span className="text-lg font-semibold text-white">{formatDuration(elapsedMs)}</span>
+          <span className="text-xs uppercase tracking-wide text-slate-500">
+            Elapsed
+          </span>
+          <span className="text-lg font-semibold text-white">
+            {formatDuration(elapsedMs)}
+          </span>
         </div>
         <div className="flex flex-col">
-          <span className="text-xs uppercase tracking-wide text-slate-500">Remaining</span>
-          <span className="text-lg font-semibold text-white">{formatCountdown(remainingMs)}</span>
+          <span className="text-xs uppercase tracking-wide text-slate-500">
+            Remaining
+          </span>
+          <span className="text-lg font-semibold text-white">
+            {formatCountdown(remainingMs)}
+          </span>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-slate-500">Speed</span>
+          <span className="text-xs uppercase tracking-wide text-slate-500">
+            Speed
+          </span>
           {speedOptions.map((speed) => (
             <button
               key={speed}
@@ -46,7 +60,9 @@ export const PlaybackBar = ({ playback, bundle }: PlaybackBarProps) => {
               onClick={() => playback.setSpeed(speed)}
               className={clsx(
                 'rounded-full px-3 py-1 text-xs font-semibold transition',
-                playback.speed === speed ? 'bg-accent/20 text-accent' : 'bg-white/5 text-slate-400 hover:bg-white/10',
+                playback.speed === speed
+                  ? 'bg-accent/20 text-accent'
+                  : 'bg-white/5 text-slate-400 hover:bg-white/10',
               )}
             >
               {speed.toFixed(speed < 1 ? 1 : 0)}×
@@ -60,7 +76,9 @@ export const PlaybackBar = ({ playback, bundle }: PlaybackBarProps) => {
           min={0}
           max={1000}
           value={Math.round(playback.progress * 1000)}
-          onChange={(event) => playback.seekFraction(Number(event.target.value) / 1000)}
+          onChange={(event) =>
+            playback.seekFraction(Number(event.target.value) / 1000)
+          }
           className="w-full accent-accent"
         />
         <div className="flex justify-between text-xs text-slate-500">
