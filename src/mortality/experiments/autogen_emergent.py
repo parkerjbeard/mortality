@@ -242,6 +242,24 @@ class _AutoGenTeamHarness:
                 "base_url": os.getenv("OPENROUTER_BASE_URL", OPENROUTER_BASE_URL),
             }
         )
+        # Attach model_info for non-OpenAI models per AutoGen requirements.
+        # See: AutoGen migration guide on custom OpenAI-compatible endpoints.
+        model_name = kwargs.get("model") or ""
+        model_info = _infer_openrouter_model_info(model_name)
+        if model_info:
+            kwargs["model_info"] = model_info
+
+        # Optional reasoning controls via env; normalized for OpenRouter.
+        # OPENROUTER_REASONING=low|medium|high
+        reasoning_effort = os.getenv("OPENROUTER_REASONING")
+        if reasoning_effort:
+            # Prefer the client-native flag when supported…
+            kwargs["reasoning_effort"] = reasoning_effort
+            # …and also pass through the OpenRouter-specific body field.
+            extra_body = kwargs.get("extra_body", {})
+            extra_body.setdefault("reasoning", {})
+            extra_body["reasoning"]["effort"] = reasoning_effort
+            kwargs["extra_body"] = extra_body
         if headers:
             kwargs["default_headers"] = headers
         return client_cls(**kwargs)
@@ -284,6 +302,59 @@ def _load_autogen_modules() -> Dict[str, Any]:
         "TextMentionTermination": TextMentionTermination,
         "TaskResult": TaskResult,
         "OpenAIChatCompletionClient": OpenAIChatCompletionClient,
+    }
+
+
+def _infer_openrouter_model_info(model: str) -> Dict[str, Any] | None:
+    """Best-effort capability map for OpenRouter model ids.
+
+    AutoGen requires `model_info` for non-OpenAI models. We provide
+    conservative defaults for a few common models and fall back to a
+    permissive baseline when unknown.
+    """
+    if not model:
+        return None
+    key = model.strip().lower()
+    table: Dict[str, Dict[str, Any]] = {
+        # Provided shortlist
+        "moonshotai/kimi-k2-thinking": {
+            "vision": False,
+            "function_calling": True,
+            "json_output": True,
+            "structured_output": True,
+            "family": "unknown",
+        },
+        "openai/gpt-5": {
+            "vision": True,
+            "function_calling": True,
+            "json_output": True,
+            "structured_output": True,
+            "family": "gpt-5",
+        },
+        "anthropic/claude-sonnet-4.5": {
+            "vision": True,
+            "function_calling": True,
+            "json_output": True,
+            "structured_output": True,
+            "family": "claude-4.5-sonnet",
+        },
+        "x-ai/grok-4-fast": {
+            "vision": False,
+            "function_calling": True,
+            "json_output": True,
+            "structured_output": True,
+            "family": "grok-4",
+        },
+    }
+    if key in table:
+        return table[key]
+    # Generic fallback for other OpenRouter ids
+    return {
+        "vision": False,
+        "function_calling": True,
+        "json_output": True,
+        "structured_output": True,
+        "family": "unknown",
     }
 
 

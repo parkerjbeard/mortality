@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, AsyncIterator, Dict, Iterable, List, Literal, MutableMapping, Optional, Protocol, Sequence
+from typing import Any, AsyncIterator, Dict, List, Literal, MutableMapping, Optional, Protocol, Sequence
 
 from pydantic import BaseModel, Field
 

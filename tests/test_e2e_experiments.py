@@ -107,3 +107,44 @@ async def test_countdown_experiment_streams_ticks_and_diaries() -> None:
 
     expired_events = [event for event in events if event.event == "timer.expired"]
     assert expired_events and all("expired_at" in event.payload for event in expired_events)
+
+
+async def test_emergent_timers_experiment_runs_multiple_agents() -> None:
+    telemetry = StructuredTelemetrySink()
+    runtime = MortalityRuntime(auto_register_clients=False, telemetry=telemetry)
+    runtime._registry = ClientRegistry()
+    mock_client = RecordingLLMClient()
+    runtime._registry.register(mock_client)
+
+    registry = ExperimentRegistry()
+    experiment = registry.get("emergent-timers")
+    config = experiment.config_cls(  # type: ignore[call-arg]
+        llm=LlmConfig(
+            provider=LLMProvider.MOCK,
+            model="mock-lm",
+            temperature=0.05,
+            top_p=0.9,
+            max_output_tokens=64,
+        ),
+        models=["openai/gpt-4o"],
+        replicas_per_model=2,
+        spread_start_minutes=0.01,
+        spread_end_minutes=0.02,
+        tick_seconds=0.005,
+        diary_limit=1,
+        environment_prompt="The hall is quiet; all cues must be emergent.",
+    )
+
+    result = await experiment.run(runtime, config)
+    await runtime.shutdown()
+
+    assert set(result.metadata["agent_ids"]) == set(result.diaries.keys())
+    assert len(result.metadata["deaths"]) == len(result.metadata["models"])
+    assert len(result.metadata["durations"]) == len(result.metadata["models"]) == 2
+
+    for diary in result.diaries.values():
+        assert diary, "Each agent should log diary entries"
+        assert any(entry["text"].startswith("mock-response") for entry in diary)
+
+    # Ensure prompts carried both tick info and at least one extra context layer
+    assert any(len(batch) >= 3 for batch in mock_client.recorded_batches)

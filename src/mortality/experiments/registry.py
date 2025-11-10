@@ -4,6 +4,7 @@ from typing import Dict, Iterable
 
 from .base import BaseExperiment
 from .autogen_emergent import AutoGenEmergentExperiment
+from .emergent_timer import EmergentTimerInvestigationExperiment
 from .multi_timer import CascadingDeathsExperiment
 from .respawn_diary import DiaryRespawnExperiment
 from .single_timer import CountdownSelfDiscoveryExperiment
@@ -16,6 +17,7 @@ class ExperimentRegistry:
         self.register(CascadingDeathsExperiment())
         self.register(DiaryRespawnExperiment())
         self.register(AutoGenEmergentExperiment())
+        self.register(EmergentTimerInvestigationExperiment())
 
     def register(self, experiment: BaseExperiment) -> None:
         if experiment.slug in self._experiments:

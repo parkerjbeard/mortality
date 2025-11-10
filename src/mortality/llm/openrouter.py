@@ -82,15 +82,16 @@ class OpenRouterChatClient(LLMClient):
 
         timeout = session.config.metadata.get("request_timeout") if session.config.metadata else None
         last_metadata: Dict[str, Any] = {"model": payload["model"]}
-        async with self._client.stream(
-            "POST",
-            f"{self._base_url}/chat/completions",
-            json=payload,
-            headers=headers,
-            timeout=timeout or self._timeout,
-        ) as response:
-            response.raise_for_status()
-            async for line in response.aiter_lines():
+        try:
+            async with self._client.stream(
+                "POST",
+                f"{self._base_url}/chat/completions",
+                json=payload,
+                headers=headers,
+                timeout=timeout or self._timeout,
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
                     if not line:
                         continue
                     if line.startswith(":"):
@@ -118,6 +119,17 @@ class OpenRouterChatClient(LLMClient):
                         last_metadata.update(chunk_meta)
                     for event in self._chunk_events(chunk, chunk_meta):
                         yield event
+        except httpx.HTTPStatusError as exc:
+            # Surface OpenRouter error payloads to aid debugging (e.g. invalid model id).
+            detail = None
+            try:
+                data = exc.response.json()
+                # OpenRouter/OpenAI-compatible errors often include these fields
+                detail = data.get("error") or data
+            except Exception:
+                detail = exc.response.text
+            message = f"OpenRouter request failed ({exc.response.status_code}) for model '{payload.get('model')}': {detail}"
+            raise httpx.HTTPStatusError(message, request=exc.request, response=exc.response) from exc
         yield LLMStreamEvent(type="end", metadata=last_metadata)
 
     def _parse_chunk(self, payload: str) -> Dict[str, Any] | None:
