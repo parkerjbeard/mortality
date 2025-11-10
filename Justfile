@@ -62,9 +62,9 @@ ui-build:
 
 autogen-demo: install env
   : "${OPENROUTER_API_KEY:?OPENROUTER_API_KEY is required for autogen-demo}"
-  : "${OPENROUTER_MODEL:=openrouter/auto}"
+  : "${OPENROUTER_MODEL:?OPENROUTER_MODEL is required for autogen-demo}"
   : "${OPENROUTER_REASONING:=low}"
-  PYTHONPATH=src {{PY}} -c $'import os\nimport anyio\nfrom mortality.experiments.base import LlmConfig\nfrom mortality.experiments.autogen_emergent import AutoGenEmergentExperiment, AutoGenEmergentConfig\nfrom mortality.llm.base import LLMProvider\nfrom mortality.orchestration.runtime import MortalityRuntime\n\nasync def main():\n    runtime = MortalityRuntime()\n    experiment = AutoGenEmergentExperiment()\n    model = os.getenv("OPENROUTER_MODEL", "x-ai/grok-4-fast")\n    cfg = AutoGenEmergentConfig(llm=LlmConfig(provider=LLMProvider.OPENROUTER, model=model, temperature=0.2, top_p=0.9, max_output_tokens=512), rounds=2)\n    result = await experiment.run(runtime, cfg)\n    await runtime.shutdown()\n    print({"participants": list(result.diaries.keys()), "messages": len(result.metadata.get("messages", []))})\n\nanyio.run(main)\n'
+  PYTHONPATH=src {{PY}} -c $'import os\nimport anyio\nfrom mortality.experiments.base import LlmConfig\nfrom mortality.experiments.autogen_emergent import AutoGenEmergentExperiment, AutoGenEmergentConfig\nfrom mortality.llm.base import LLMProvider\nfrom mortality.orchestration.runtime import MortalityRuntime\n\nasync def main():\n    runtime = MortalityRuntime()\n    experiment = AutoGenEmergentExperiment()\n    model = os.getenv("MORTALITY_DEFAULT_MODEL") or os.getenv("OPENROUTER_MODEL")\n    if not model:\n        raise RuntimeError("Set OPENROUTER_MODEL or MORTALITY_DEFAULT_MODEL before running autogen-demo")\n    cfg = AutoGenEmergentConfig(llm=LlmConfig(provider=LLMProvider.OPENROUTER, model=model, temperature=0.2, top_p=0.9, max_output_tokens=512), rounds=2)\n    result = await experiment.run(runtime, cfg)\n    await runtime.shutdown()\n    print({"participants": list(result.diaries.keys()), "messages": len(result.metadata.get("messages", []))})\n\nanyio.run(main)\n'
 
 # --- 15-minute Emergent Timer Run (OpenRouter) ---
 
@@ -74,5 +74,5 @@ emergent-run: install env
   : "${OPENROUTER_TICK_SECONDS:=20}"
   : "${MORTALITY_EMERGENT_SPREAD_START:=5.0}"
   : "${MORTALITY_EMERGENT_SPREAD_END:=15.0}"
-  : "${MORTALITY_REPLICAS_PER_MODEL:=2}"
+  : "${MORTALITY_REPLICAS_PER_MODEL:=1}"
   PYTHONPATH=src {{PY}} scripts/run_emergent.py

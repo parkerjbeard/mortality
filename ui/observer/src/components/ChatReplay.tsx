@@ -8,6 +8,7 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { NormalizedBundle, NormalizedEvent } from '@/lib/bundle'
+import { getAgentDisplayName, getAgentInitials } from '@/lib/agents'
 import { PlaybackControls } from '@/hooks/usePlayback'
 import { formatCountdown, formatTimestamp } from '@/lib/time'
 import { MarkdownContent } from './MarkdownContent'
@@ -116,14 +117,8 @@ export const ChatReplay = ({
           {messages.map((message) => {
             const tone = palette[getToneIndex(bundle, message.agentId)]
             const profile = bundle.agents[message.agentId]
-            const name = profile?.display_name ?? message.agentId
-            const initials =
-              profile?.display_name
-                ?.split(' ')
-                .map((part) => part[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase() || name.slice(0, 2).toUpperCase()
+            const name = getAgentDisplayName(profile, message.agentId)
+            const initials = getAgentInitials(profile, message.agentId)
             const countdownLabel =
               typeof message.tickMsLeft === 'number'
                 ? `${formatCountdown(message.tickMsLeft)} left`

@@ -11,6 +11,7 @@ from .profile import AgentProfile
 
 class LifecycleStatus(str, Enum):
     ALIVE = "alive"
+    AFTERLIFE = "afterlife"
     EXPIRED = "expired"
     RESPAWNING = "respawning"
 
@@ -25,6 +26,9 @@ class AgentState:
 
     def mark_dead(self) -> None:
         self.status = LifecycleStatus.EXPIRED
+
+    def enter_afterlife(self) -> None:
+        self.status = LifecycleStatus.AFTERLIFE
 
     def respawn(self) -> None:
         # Respawn completes synchronously, so agents should immediately report as alive again.

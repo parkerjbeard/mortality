@@ -183,6 +183,22 @@ class MortalityRuntime:
             snapshot[agent_id] = self._last_ms_left.get(agent_id)
         return snapshot
 
+    def snapshot_agent_routes(self) -> Dict[str, Dict[str, Any]]:
+        """Return per-agent routed model history (if any)."""
+
+        snapshot: Dict[str, Dict[str, Any]] = {}
+        for agent_id, agent in self._agents.items():
+            attrs = agent.state.session.attributes
+            history = list(attrs.get("routed_models", []))
+            last = attrs.get("last_routed_model")
+            if not history and not last:
+                continue
+            snapshot[agent_id] = {
+                "history": history,
+                "last": last or (history[-1] if history else None),
+            }
+        return snapshot
+
     async def _close_registered_clients(self) -> None:
         closers = []
         for client in self._registry.clients():

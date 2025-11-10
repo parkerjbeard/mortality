@@ -59,6 +59,20 @@ export interface AgentSessionInfo {
   model?: string
 }
 
+export interface AgentRouteInfo {
+  last?: string
+  history: string[]
+}
+
+export type AgentModelSource = 'routed' | 'session' | 'default'
+
+export interface AgentModelDetails {
+  label: string
+  source: AgentModelSource
+  provider?: string
+  history: string[]
+}
+
 export interface DiaryConnector {
   fromAgentId: string
   toAgentId: string
@@ -74,6 +88,7 @@ export interface NormalizedBundle {
   agents: Record<string, AgentProfile>
   agentOrder: string[]
   agentSessions: Record<string, AgentSessionInfo>
+  agentRoutes: Record<string, AgentRouteInfo>
   timeline: {
     startMs: number
     endMs: number
@@ -137,6 +152,7 @@ const normalizeBundle = (raw: RawBundle): NormalizedBundle => {
   })
 
   const agentSessions = extractAgentSessions(events)
+  const agentRoutes = extractAgentRoutes(raw, events)
   const connectors = buildDiaryConnectors(events, diaries)
 
   return {
@@ -147,6 +163,7 @@ const normalizeBundle = (raw: RawBundle): NormalizedBundle => {
     agents: raw.agents,
     agentOrder,
     agentSessions,
+    agentRoutes,
     timeline: { startMs, endMs, durationMs },
     connectors,
   }
@@ -273,6 +290,130 @@ const normalizeSessionInfo = (value: unknown): AgentSessionInfo | undefined => {
   return { provider, model }
 }
 
+const extractAgentRoutes = (
+  raw: RawBundle,
+  events: NormalizedEvent[],
+): Record<string, AgentRouteInfo> => {
+  const telemetryRoutes = buildRouteHistoryFromEvents(events)
+  const metadataRoutes = normalizeMetadataRoutes(raw.metadata)
+  return mergeAgentRoutes(telemetryRoutes, metadataRoutes)
+}
+
+const buildRouteHistoryFromEvents = (
+  events: NormalizedEvent[],
+): Record<string, AgentRouteInfo> => {
+  const routes: Record<string, AgentRouteInfo> = {}
+  events.forEach((event) => {
+    if (event.event !== 'agent.route_update') {
+      return
+    }
+    const agentId = eventAgentId(event)
+    if (!agentId) {
+      return
+    }
+    const payload = event.payload || {}
+    const model =
+      typeof payload['model'] === 'string' ? payload['model'].trim() : ''
+    const history = collectStringList(payload['history'])
+    const existing = routes[agentId] || { history: [] }
+    let mergedHistory = existing.history
+    if (history.length) {
+      mergedHistory = uniqueStrings([...mergedHistory, ...history])
+    }
+    if (model) {
+      mergedHistory = uniqueStrings([...mergedHistory, model])
+    }
+    routes[agentId] = {
+      history: mergedHistory,
+      last: model || existing.last || history[history.length - 1],
+    }
+  })
+  return routes
+}
+
+const normalizeMetadataRoutes = (
+  metadata: Record<string, unknown>,
+): Record<string, AgentRouteInfo> => {
+  if (!isRecord(metadata)) {
+    return {}
+  }
+  const routed = metadata['routed_models']
+  if (!isRecord(routed)) {
+    return {}
+  }
+  const routes: Record<string, AgentRouteInfo> = {}
+  Object.entries(routed).forEach(([agentId, value]) => {
+    if (!isRecord(value)) {
+      return
+    }
+    const history = collectStringList(value['history'])
+    const last = typeof value['last'] === 'string' ? value['last'].trim() : ''
+    if (!history.length && !last) {
+      return
+    }
+    const normalizedHistory = history.length
+      ? uniqueStrings(history)
+      : last
+        ? [last]
+        : []
+    routes[agentId] = {
+      history: normalizedHistory,
+      last: last || normalizedHistory[normalizedHistory.length - 1],
+    }
+  })
+  return routes
+}
+
+const mergeAgentRoutes = (
+  base: Record<string, AgentRouteInfo>,
+  overrides: Record<string, AgentRouteInfo>,
+): Record<string, AgentRouteInfo> => {
+  const merged: Record<string, AgentRouteInfo> = {}
+  Object.entries(base).forEach(([agentId, info]) => {
+    merged[agentId] = {
+      history: info.history ? [...info.history] : [],
+      last: info.last,
+    }
+  })
+  Object.entries(overrides).forEach(([agentId, info]) => {
+    const existing = merged[agentId]
+    if (!existing) {
+      merged[agentId] = {
+        history: info.history ? [...info.history] : [],
+        last: info.last,
+      }
+      return
+    }
+    const history = uniqueStrings([...existing.history, ...info.history])
+    merged[agentId] = {
+      history,
+      last: info.last || existing.last || history[history.length - 1],
+    }
+  })
+  return merged
+}
+
+const extractRoutedModel = (
+  bundle: NormalizedBundle,
+  agentId: string,
+): AgentModelDetails | undefined => {
+  const route = bundle.agentRoutes[agentId]
+  if (!route) {
+    return undefined
+  }
+  const history = route.history?.length ? uniqueStrings(route.history) : []
+  const label = route.last?.trim() || history[history.length - 1]
+  if (!label) {
+    return undefined
+  }
+  return {
+    label,
+    source: 'routed',
+    provider: inferProvider(label),
+    history: history.length ? history : [label],
+  }
+}
+
 const formatSessionModelLabel = (
   session?: AgentSessionInfo,
 ): string | undefined => {
@@ -296,15 +437,75 @@ const formatSessionModelLabel = (
   return model
 }
 
+const inferProvider = (label?: string): string | undefined => {
+  if (!label) {
+    return undefined
+  }
+  const trimmed = label.trim()
+  const slashIndex = trimmed.indexOf('/')
+  if (slashIndex <= 0) {
+    return undefined
+  }
+  return trimmed.slice(0, slashIndex)
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+const collectStringList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter((entry): entry is string => entry.length > 0)
+}
+
+const uniqueStrings = (values: string[]): string[] => {
+  const seen = new Set<string>()
+  const ordered: string[] = []
+  values.forEach((value) => {
+    if (!seen.has(value)) {
+      seen.add(value)
+      ordered.push(value)
+    }
+  })
+  return ordered
+}
+
+export const getAgentModelDetails = (
+  bundle: NormalizedBundle,
+  agentId: string,
+): AgentModelDetails => {
+  const routed = extractRoutedModel(bundle, agentId)
+  if (routed) {
+    return routed
+  }
+
+  const session = bundle.agentSessions[agentId]
+  const sessionLabel = formatSessionModelLabel(session)
+  if (sessionLabel) {
+    return {
+      label: sessionLabel,
+      source: 'session',
+      provider: session?.provider || inferProvider(sessionLabel),
+      history: session?.model ? [session.model] : [sessionLabel],
+    }
+  }
+
+  const bundleModel =
+    typeof bundle.raw.llm.model === 'string' ? bundle.raw.llm.model.trim() : ''
+  const label = bundleModel || 'Unknown model'
+  return {
+    label,
+    source: 'default',
+    provider: inferProvider(label),
+    history: bundleModel ? [bundleModel] : [],
+  }
+}
+
 export const getAgentModelLabel = (
   bundle: NormalizedBundle,
   agentId: string,
-): string => {
-  const preferred = formatSessionModelLabel(bundle.agentSessions[agentId])
-  if (preferred) {
-    return preferred
-  }
-  const bundleModel =
-    typeof bundle.raw.llm.model === 'string' ? bundle.raw.llm.model.trim() : ''
-  return bundleModel || 'Unknown model'
-}
+): string => getAgentModelDetails(bundle, agentId).label

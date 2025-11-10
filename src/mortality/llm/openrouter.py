@@ -28,7 +28,7 @@ class OpenRouterChatClient(LLMClient):
         api_key: str | None = None,
         base_url: str = "https://openrouter.ai/api/v1",
         timeout: float = 60.0,
-        default_model: str = "openrouter/auto",
+        default_model: str | None = None,
         referer: str | None = None,
         app_title: str | None = None,
     ) -> None:
@@ -37,7 +37,11 @@ class OpenRouterChatClient(LLMClient):
             raise ProviderUnavailable("OPENROUTER_API_KEY is required for OpenRouterChatClient")
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._default_model = default_model
+        # Allow callers to defer model selection until session creation time. If neither
+        # a default nor an environment override is set, we rely on the session config
+        # to supply one (see complete_response).
+        resolved_model = default_model or os.getenv("OPENROUTER_MODEL")
+        self._default_model = resolved_model
         self._referer = referer or os.getenv("OPENROUTER_HTTP_REFERER")
         self._app_title = app_title or os.getenv("OPENROUTER_APP_TITLE")
         self._client = httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout)
@@ -54,8 +58,14 @@ class OpenRouterChatClient(LLMClient):
         messages: Sequence[LLMMessage],
         tools: Sequence[Dict[str, object]] | None = None,
     ) -> LLMCompletion:
+        model_name = session.config.model or self._default_model
+        if not model_name:
+            raise ProviderUnavailable(
+                "OpenRouter model must be provided via session_config.model or OPENROUTER_MODEL"
+            )
+
         payload: Dict[str, Any] = {
-            "model": session.config.model or self._default_model,
+            "model": model_name,
             "messages": to_openai_messages(session, messages),
             "temperature": session.config.temperature,
             "top_p": session.config.top_p,

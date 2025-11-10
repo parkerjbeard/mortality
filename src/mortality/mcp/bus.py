@@ -293,14 +293,14 @@ class SharedMCPBus:
         owner_name = profile.display_name if profile else owner_id
         lines = [
             f"Shared diary excerpt from {owner_name} ({owner_id}) via MCP bus.",
-            f"Scope: {token.scope.describe()} | Token: {token.token}",
+            f"Scope: {token.scope.describe()} | Token: {token.token} | cite as 'via message'",
         ]
         for entry in entries:
             tag_str = f" tags={','.join(entry.tags)}" if entry.tags else ""
             timestamp = entry.created_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
             label = f"Entry #{entry.entry_index}" if entry.entry_index else "Entry"
             lines.append(
-                f"- {label} from life {entry.life_index} at {timestamp}{tag_str}: {entry.text}"
+                f"- (via message) {label} from life {entry.life_index} at {timestamp}{tag_str}: {entry.text}"
             )
         text = "\n".join(lines)
         return DiaryResource(

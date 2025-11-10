@@ -11,6 +11,7 @@ from ..mcp.bus import SharedMCPBus
 from .memory import AgentMemory, DiaryEntry
 from .profile import AgentProfile
 from .state import AgentState, LifecycleStatus
+from .action_gate import ActionGate
 
 
 ToolHandler = Callable[[LLMToolCall], Awaitable[Any]]
@@ -31,6 +32,7 @@ class MortalityAgent:
         self._telemetry = telemetry or NullTelemetrySink()
         self._shared_bus = shared_bus
         self._io_lock = asyncio.Lock()
+        self._action_gate = ActionGate()
 
     @classmethod
     async def spawn(
@@ -58,6 +60,10 @@ class MortalityAgent:
     ) -> str:
         if self.state.status == LifecycleStatus.EXPIRED:
             raise RuntimeError(f"Agent {self.state.profile.agent_id} is already dead")
+        interval_hint = None
+        if self.state.last_tick_ms and self.state.last_tick_ms > tick_ms_left:
+            interval_hint = self.state.last_tick_ms - tick_ms_left
+        self._action_gate.note_interval(interval_hint)
         async with self._io_lock:
             payload_ms = tick_ms_left if reveal_tick_ms else None
             tick = make_tick_tool_message(payload_ms, cause=cause)
@@ -81,7 +87,19 @@ class MortalityAgent:
                         history = session_attrs.setdefault("routed_models", [])
                         if routed_model not in history:
                             history.append(routed_model)
+                        last_routed = session_attrs.get("last_routed_model")
+                        route_changed = last_routed != routed_model
                         session_attrs["last_routed_model"] = routed_model
+                        if route_changed:
+                            self._telemetry.emit(
+                                "agent.route_update",
+                                {
+                                    "agent_id": self.state.profile.agent_id,
+                                    "model": routed_model,
+                                    "provider": routed_model.split("/", 1)[0] if "/" in routed_model else None,
+                                    "history": list(history),
+                                },
+                            )
                 for message in batch:
                     self.state.session.append(message)
 
@@ -93,8 +111,33 @@ class MortalityAgent:
                     if assistant_metadata
                     else LLMMessage(role="assistant", content=transcript)
                 )
-                self.state.session.append(assistant_message)
-                self._emit_message_event("outbound", assistant_message, tick_ms_left=tick_ms_left, cause=cause)
+                allow_message = True
+                block_reason: str | None = None
+                if not completion.tool_calls:
+                    decision = await self._action_gate.guard_assistant(text=transcript)
+                    allow_message = decision.allowed
+                    block_reason = decision.reason
+                    if not allow_message:
+                        self._telemetry.emit(
+                            "agent.action_blocked",
+                            {
+                                "agent_id": self.state.profile.agent_id,
+                                "kind": "assistant",
+                                "reason": block_reason or "unknown",
+                                "tick_ms_left": tick_ms_left,
+                            },
+                        )
+                if allow_message:
+                    self.state.session.append(assistant_message)
+                    self._emit_message_event(
+                        "outbound",
+                        assistant_message,
+                        tick_ms_left=tick_ms_left,
+                        cause=cause,
+                    )
+                else:
+                    transcript = ""
+                    break
 
                 if (
                     not completion.tool_calls
@@ -117,14 +160,26 @@ class MortalityAgent:
             self.state.last_tick_ms = tick_ms_left
             return transcript
 
-    def log_diary_entry(
+    async def log_diary_entry(
         self,
         text: str,
         *,
         tick_ms_left: int,
         tags: list[str] | None = None,
         clock_ts: datetime | None = None,
-    ) -> DiaryEntry:
+    ) -> DiaryEntry | None:
+        decision = await self._action_gate.guard_diary(text=text)
+        if not decision.allowed:
+            self._telemetry.emit(
+                "agent.action_blocked",
+                {
+                    "agent_id": self.state.profile.agent_id,
+                    "kind": "diary",
+                    "reason": decision.reason or "unknown",
+                    "tick_ms_left": tick_ms_left,
+                },
+            )
+            return None
         entry = self.state.memory.remember(
             text,
             tick_ms_left=tick_ms_left,
@@ -136,6 +191,7 @@ class MortalityAgent:
             {
                 "agent_id": self.state.profile.agent_id,
                 "entry": entry.model_dump(mode="json"),
+                "new_keywords": sorted(decision.new_keywords or []),
             },
         )
         if self._shared_bus:
@@ -154,9 +210,22 @@ class MortalityAgent:
         )
         return LLMMessage(role="system", content=summary)
 
-    def record_death(self, epitaph: str = "", *, log_epitaph: bool = True) -> None:
+    def enter_afterlife(self) -> None:
+        if self.state.status == LifecycleStatus.EXPIRED:
+            return
+        if self.state.status != LifecycleStatus.AFTERLIFE:
+            self.state.enter_afterlife()
+            self._telemetry.emit(
+                "agent.afterlife",
+                {
+                    "agent_id": self.state.profile.agent_id,
+                    "life_index": self.state.memory.life_index,
+                },
+            )
+
+    async def record_death(self, epitaph: str = "", *, log_epitaph: bool = True) -> None:
         if log_epitaph:
-            self.log_diary_entry(
+            await self.log_diary_entry(
                 epitaph or "Fell silent.",
                 tick_ms_left=self.state.last_tick_ms or 0,
                 tags=["epitaph"],

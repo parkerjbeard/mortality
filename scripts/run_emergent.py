@@ -63,22 +63,19 @@ async def _run_emergent() -> RunOutcome:
     spread_start = float(os.getenv("MORTALITY_EMERGENT_SPREAD_START", "5.0"))
     spread_end = float(os.getenv("MORTALITY_EMERGENT_SPREAD_END", "15.0"))
     tick_seconds = float(os.getenv("OPENROUTER_TICK_SECONDS", "20"))
-    replicas = int(os.getenv("MORTALITY_REPLICAS_PER_MODEL", "2"))
 
-    raw_models = os.getenv("MORTALITY_EMERGENT_MODELS", "").strip()
-    models: list[str] = []
-    if raw_models:
-        parts = [p.strip() for p in raw_models.split(",")]
-        models = [p for p in parts if p]
+    models = _parse_unique_models(os.getenv("MORTALITY_EMERGENT_MODELS"))
+    if len(models) < 4:
+        raise RuntimeError(
+            "MORTALITY_EMERGENT_MODELS must list at least four unique comma-separated model IDs"
+        )
 
-    default_model = (
-        os.getenv("MORTALITY_DEFAULT_MODEL")
-        or os.getenv("OPENROUTER_MODEL")
-        or "openrouter/auto"
-    )
+    replicas = int(os.getenv("MORTALITY_REPLICAS_PER_MODEL", "1"))
+    if replicas != 1:
+        raise RuntimeError("MORTALITY_REPLICAS_PER_MODEL must be 1 so each agent uses a different model")
 
     cfg = experiment.config_cls(
-        llm=LlmConfig(provider=LLMProvider.OPENROUTER, model=default_model),
+        llm=LlmConfig(provider=LLMProvider.OPENROUTER, model=models[0]),
         models=models,
         replicas_per_model=replicas,
         spread_start_minutes=spread_start,
@@ -93,6 +90,8 @@ async def _run_emergent() -> RunOutcome:
     metadata: Dict[str, Any]
     result = None
 
+    routes_snapshot: Dict[str, Dict[str, Any]] = {}
+
     try:
         result = await experiment.run(runtime, cfg)
     except cancel_exc:
@@ -102,6 +101,7 @@ async def _run_emergent() -> RunOutcome:
         diaries, metadata = _snapshot_interrupted(runtime, "cancelled by Ctrl+C")
         status = "interrupted"
     finally:
+        routes_snapshot = runtime.snapshot_agent_routes()
         await runtime.shutdown()
 
     if status == "completed":
@@ -110,6 +110,7 @@ async def _run_emergent() -> RunOutcome:
 
     metadata.setdefault("status", status)
     metadata.setdefault("agent_ids", sorted(diaries.keys()))
+    _merge_routed_models(metadata, routes_snapshot)
 
     return RunOutcome(
         telemetry=telemetry,
@@ -120,6 +121,19 @@ async def _run_emergent() -> RunOutcome:
         metadata=metadata,
         status=status,
     )
+
+
+def _parse_unique_models(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+    models: list[str] = []
+    seen: set[str] = set()
+    for part in raw.split(","):
+        candidate = part.strip()
+        if candidate and candidate not in seen:
+            seen.add(candidate)
+            models.append(candidate)
+    return models
 
 
 def _extract_system_prompt(config: Any) -> str | None:
@@ -138,7 +152,68 @@ def _snapshot_interrupted(runtime: MortalityRuntime, reason: str) -> tuple[Dict[
         "interrupted_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "reason": reason,
     }
+    routes = runtime.snapshot_agent_routes()
+    if routes:
+        metadata["routed_models"] = routes
     return diaries, metadata
+
+
+def _merge_routed_models(metadata: Dict[str, Any], routes: Dict[str, Dict[str, Any]]) -> None:
+    if not routes:
+        return
+    existing = metadata.get("routed_models")
+    merged: Dict[str, Dict[str, Any]] = {}
+    if isinstance(existing, dict):
+        for agent_id, payload in existing.items():
+            normalized = _normalize_route_entry(payload)
+            if normalized:
+                merged[agent_id] = normalized
+    for agent_id, payload in routes.items():
+        normalized = _normalize_route_entry(payload)
+        if not normalized:
+            continue
+        if agent_id in merged:
+            merged_entry = merged[agent_id]
+            merged_entry["history"] = _unique_list(
+                *(merged_entry.get("history", [])),
+                *(normalized.get("history", [])),
+            )
+            if not merged_entry.get("last"):
+                merged_entry["last"] = normalized.get("last")
+        else:
+            merged[agent_id] = normalized
+    if merged:
+        metadata["routed_models"] = merged
+
+
+def _normalize_route_entry(payload: Any) -> Dict[str, Any] | None:
+    if not isinstance(payload, dict):
+        return None
+    history = _unique_list(*payload.get("history", [])) if "history" in payload else []
+    last = payload.get("last")
+    if last is None and history:
+        last = history[-1]
+    return {"history": history, "last": last}
+
+
+def _unique_list(*values: Any) -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if trimmed and trimmed not in seen:
+                seen.add(trimmed)
+                ordered.append(trimmed)
+        elif isinstance(value, list):
+            for item in value:
+                if not isinstance(item, str):
+                    continue
+                trimmed = item.strip()
+                if trimmed and trimmed not in seen:
+                    seen.add(trimmed)
+                    ordered.append(trimmed)
+    return ordered
 
 
 if __name__ == "__main__":
