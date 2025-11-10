@@ -77,7 +77,6 @@ class ConsoleTelemetrySink(TelemetrySink):
       - MORTALITY_CONSOLE_TRUNCATE: int chars for message bodies (default 400)
       - MORTALITY_CONSOLE_TIMESTAMPS: '1' to show timestamps (default 1)
       - MORTALITY_CONSOLE_TICKS: '1' to show every tick line (default 1)
-      - MORTALITY_CONSOLE_CHUNKS: '1' to show streaming chunks (default 0)
       - MORTALITY_CONSOLE_SYSTEM: 'once' to show system messages once, 'all' (default 'once')
     """
 
@@ -88,7 +87,6 @@ class ConsoleTelemetrySink(TelemetrySink):
         self._truncate = int(os.getenv("MORTALITY_CONSOLE_TRUNCATE", "0") or 0)
         self._show_ts = os.getenv("MORTALITY_CONSOLE_TIMESTAMPS", "1") != "0"
         self._show_ticks = os.getenv("MORTALITY_CONSOLE_TICKS", "1") != "0"
-        self._show_chunks = os.getenv("MORTALITY_CONSOLE_CHUNKS", "0") == "1"
         self._system_mode = os.getenv("MORTALITY_CONSOLE_SYSTEM", "once").lower()
         self._seen_system: set[str] = set()
 
@@ -162,12 +160,6 @@ class ConsoleTelemetrySink(TelemetrySink):
                 line = f"{prefix}🔧 result {body}"
             else:
                 line = f"{prefix}🔧 result"
-
-        elif event == "agent.chunk":
-            if not self._show_chunks:
-                return
-            n = len(str(data.get("content", "")))
-            line = f"{prefix}{DIM}… chunk {n} chars{RESET}"
 
         elif event == "agent.diary_entry":
             entry = (data.get("entry") or {}).get("text", "")

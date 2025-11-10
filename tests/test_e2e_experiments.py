@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import AsyncIterator, Sequence
+from typing import Sequence
 from uuid import uuid4
 
 import pytest
@@ -11,11 +11,11 @@ from mortality.experiments.registry import ExperimentRegistry
 from mortality.llm.base import (
     ClientRegistry,
     LLMClient,
+    LLMCompletion,
     LLMMessage,
     LLMProvider,
     LLMSession,
     LLMSessionConfig,
-    LLMStreamEvent,
     TickToolName,
 )
 from mortality.orchestration.runtime import MortalityRuntime
@@ -36,20 +36,19 @@ class RecordingLLMClient(LLMClient):
     async def create_session(self, config: LLMSessionConfig) -> LLMSession:
         return LLMSession(id=str(uuid4()), config=config)
 
-    async def stream_response(
+    async def complete_response(
         self,
         session: LLMSession,
         messages: Sequence[LLMMessage],
         tools: Sequence[dict[str, object]] | None = None,
-    ) -> AsyncIterator[LLMStreamEvent]:
+    ) -> LLMCompletion:
         del session, tools
         batch = [message.model_copy(deep=True) for message in messages]
         self.recorded_batches.append(batch)
         call_index = len(self.recorded_batches)
         content = f"mock-response-{call_index}"
         self.responses.append(content)
-        yield LLMStreamEvent(type="content", content=content, metadata={"call_index": call_index})
-        yield LLMStreamEvent(type="end", metadata={"call_index": call_index})
+        return LLMCompletion(text=content, metadata={"call_index": call_index})
 
 
 async def test_countdown_experiment_streams_ticks_and_diaries() -> None:
@@ -100,7 +99,7 @@ async def test_countdown_experiment_streams_ticks_and_diaries() -> None:
     assert all(event.payload.get("message", {}).get("ts") for event in message_events)
 
     chunk_events = [event for event in events if event.event == "agent.chunk"]
-    assert chunk_events and all("stream_ts" in event.payload for event in chunk_events)
+    assert not chunk_events, "agent.chunk events should be gone after removing streaming"
 
     tick_events = [event for event in events if event.event == "timer.tick"]
     assert tick_events and all("tick_ts" in event.payload for event in tick_events)
@@ -141,6 +140,10 @@ async def test_emergent_timers_experiment_runs_multiple_agents() -> None:
     assert set(result.metadata["agent_ids"]) == set(result.diaries.keys())
     assert len(result.metadata["deaths"]) == len(result.metadata["models"])
     assert len(result.metadata["durations"]) == len(result.metadata["models"]) == 2
+    routed = result.metadata.get("routed_models")
+    assert routed is not None
+    for info in routed.values():
+        assert "history" in info and "last" in info
 
     for diary in result.diaries.values():
         assert diary, "Each agent should log diary entries"

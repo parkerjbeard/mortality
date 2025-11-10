@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, AsyncIterator, Dict, List, Literal, MutableMapping, Optional, Protocol, Sequence
+from typing import Any, Dict, List, Literal, MutableMapping, Optional, Protocol, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -48,14 +48,12 @@ class LLMToolCall(BaseModel):
     ts: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class LLMStreamEvent(BaseModel):
-    """Streaming token/tool events emitted by a model provider."""
+@dataclass(slots=True)
+class LLMCompletion:
+    """Normalized completion payload returned by every provider."""
 
-    type: Literal["content", "tool_call", "tool_result", "session", "error", "end"]
-    content: Optional[str] = None
-    tool_call: Optional[LLMToolCall] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    ts: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    text: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 class LLMSessionConfig(BaseModel):
@@ -91,12 +89,12 @@ class LLMClient(Protocol):
     async def create_session(self, config: LLMSessionConfig) -> LLMSession:  # pragma: no cover - interface
         ...
 
-    async def stream_response(
+    async def complete_response(
         self,
         session: LLMSession,
         messages: Sequence[LLMMessage],
         tools: Optional[Sequence[Dict[str, Any]]] = None,
-    ) -> AsyncIterator[LLMStreamEvent]:  # pragma: no cover - interface
+    ) -> LLMCompletion:  # pragma: no cover - interface
         ...
 
 

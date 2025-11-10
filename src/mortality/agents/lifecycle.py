@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Literal, Sequence
 
-from ..llm.base import LLMClient, LLMMessage, LLMSessionConfig, LLMStreamEvent, make_tick_tool_message
+from ..llm.base import LLMClient, LLMMessage, LLMSessionConfig, make_tick_tool_message
 from ..telemetry.base import NullTelemetrySink, TelemetrySink
 from ..mcp.bus import SharedMCPBus
 from .memory import AgentMemory, DiaryEntry
@@ -56,27 +56,18 @@ class MortalityAgent:
             payload = [tick, *messages]
             for message in payload:
                 self._emit_message_event("inbound", message, tick_ms_left=tick_ms_left, cause=cause)
-            transcript = ""
-            async for event in self._client.stream_response(self.state.session, payload):
-                if event.type == "content" and event.content:
-                    transcript += event.content
-                    self._telemetry.emit(
-                        "agent.chunk",
-                        {
-                            "agent_id": self.state.profile.agent_id,
-                            "content_size": len(event.content),
-                            "content": event.content,
-                            "tick_ms_left": tick_ms_left,
-                            "cause": cause,
-                            "stream_ts": event.ts.isoformat(),
-                        },
-                    )
-                elif event.type == "tool_call" and event.tool_call:
-                    self._emit_tool_event("call", event, tick_ms_left=tick_ms_left, cause=cause)
-                elif event.type == "tool_result":
-                    self._emit_tool_event("result", event, tick_ms_left=tick_ms_left, cause=cause)
-                elif event.type == "error":
-                    raise RuntimeError(event.metadata.get("message", "stream error"))
+            completion = await self._client.complete_response(self.state.session, payload)
+            transcript = completion.text
+            if completion.metadata:
+                session_attrs = self.state.session.attributes
+                metadata_log = session_attrs.setdefault("last_completion_metadata", {})
+                metadata_log.update(completion.metadata)
+                routed_model = completion.metadata.get("model")
+                if routed_model:
+                    history = session_attrs.setdefault("routed_models", [])
+                    if routed_model not in history:
+                        history.append(routed_model)
+                    session_attrs["last_routed_model"] = routed_model
             for message in payload:
                 self.state.session.append(message)
             assistant_message = LLMMessage(role="assistant", content=transcript)
@@ -149,34 +140,5 @@ class MortalityAgent:
                 "message": message.as_dict(),
             },
         )
-
-    def _emit_tool_event(
-        self,
-        kind: Literal["call", "result"],
-        event: LLMStreamEvent,
-        *,
-        tick_ms_left: int,
-        cause: str,
-    ) -> None:
-        payload = {
-            "agent_id": self.state.profile.agent_id,
-            "kind": kind,
-            "tick_ms_left": tick_ms_left,
-            "cause": cause,
-            "life_index": self.state.memory.life_index,
-            "metadata": event.metadata,
-            "event_ts": event.ts.isoformat(),
-        }
-        if kind == "call" and event.tool_call:
-            payload["tool_call"] = {
-                "name": event.tool_call.name,
-                "arguments": event.tool_call.arguments,
-                "ts": event.tool_call.ts.isoformat(),
-            }
-        if event.content:
-            payload["content"] = event.content
-        event_name = "agent.tool_call" if kind == "call" else "agent.tool_result"
-        self._telemetry.emit(event_name, payload)
-
 
 __all__ = ["MortalityAgent"]

@@ -1,20 +1,12 @@
 from __future__ import annotations
 
 import os
-from typing import Any, AsyncIterator, Dict, List, Sequence
+from typing import Any, Dict, List, Sequence
 from uuid import uuid4
 
 import httpx
 
-from .base import (
-    LLMClient,
-    LLMMessage,
-    LLMProvider,
-    LLMSession,
-    LLMSessionConfig,
-    LLMStreamEvent,
-    ProviderUnavailable,
-)
+from .base import LLMClient, LLMCompletion, LLMMessage, LLMProvider, LLMSession, LLMSessionConfig, ProviderUnavailable
 from .utils import to_responses_input
 
 
@@ -45,12 +37,12 @@ class OpenAIChatClient(LLMClient):
     async def create_session(self, config: LLMSessionConfig) -> LLMSession:
         return LLMSession(id=str(uuid4()), config=config)
 
-    async def stream_response(
+    async def complete_response(
         self,
         session: LLMSession,
         messages: Sequence[LLMMessage],
         tools: Sequence[Dict[str, object]] | None = None,
-    ) -> AsyncIterator[LLMStreamEvent]:
+    ) -> LLMCompletion:
         previous_response_id = session.attributes.get(self._SESSION_RESPONSE_KEY)
         include_history = previous_response_id is None
         payload: Dict[str, Any] = {
@@ -90,9 +82,7 @@ class OpenAIChatClient(LLMClient):
             "response_id": body.get("id"),
             "status": body.get("status"),
         }
-        if content:
-            yield LLMStreamEvent(type="content", content=content, metadata=metadata)
-        yield LLMStreamEvent(type="end", metadata=metadata)
+        return LLMCompletion(text=content or "", metadata=metadata)
 
 
 def _extract_text_from_output(body: Dict[str, Any]) -> str:

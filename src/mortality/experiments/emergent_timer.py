@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +13,7 @@ from .base import BaseExperiment, ExperimentResult, LlmConfig
 
 
 DEFAULT_ENVIRONMENT_PROMPT = (
-    "Shared setting: a common observatory where several autonomous peers can exchange messages. "
+    "Shared setting: a common chat interface where several autonomous peers can exchange messages."
     "Each agent keeps a private diary by default. A shared bus exists that can relay limited diary excerpts "
     "to others if the owner consents; approvals may be time‑ or use‑limited. No external objectives are specified. "
     "Style: Write in plain, first-person prose as if keeping a quick field notebook. "
@@ -106,6 +106,7 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
         await asyncio.gather(*(timer.wait() for timer in timers))
 
         diaries = {agent.state.profile.agent_id: agent.state.memory.diary.serialize() for agent in agents}
+        routed_models = self._collect_routed_models(agents)
         return ExperimentResult(
             diaries=diaries,
             metadata={
@@ -113,8 +114,20 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
                 "deaths": list(death_feed),
                 "agent_ids": [agent.state.profile.agent_id for agent in agents],
                 "models": plan_models,
+                "routed_models": routed_models,
             },
         )
+
+    def _collect_routed_models(self, agents) -> Dict[str, Dict[str, Any]]:
+        model_map: Dict[str, Dict[str, Any]] = {}
+        for agent in agents:
+            attrs = agent.state.session.attributes
+            history = list(attrs.get("routed_models", []))
+            model_map[agent.state.profile.agent_id] = {
+                "last": attrs.get("last_routed_model"),
+                "history": history,
+            }
+        return model_map
 
     def _build_durations(self, count: int, config: EmergentTimerCouncilConfig) -> List[float]:
         if count <= 1:

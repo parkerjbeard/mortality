@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { NormalizedBundle } from '@/lib/bundle'
 import { usePlayback } from '@/hooks/usePlayback'
-import { deriveAgentSnapshots } from '@/lib/derive'
 import { BundleLoader } from '@/components/BundleLoader'
 import { PlaybackBar } from '@/components/PlaybackBar'
 import { BoardView } from '@/components/BoardView'
@@ -12,11 +11,6 @@ const App = () => {
   const timeline = bundle?.timeline ?? { startMs: 0, endMs: 1 }
   const playback = usePlayback(timeline)
   const { seekMs, setSpeed, setPlaying } = playback
-
-  const snapshots = useMemo(
-    () => (bundle ? deriveAgentSnapshots(bundle, playback.playheadMs) : {}),
-    [bundle, playback.playheadMs],
-  )
 
   const eventsForView = useMemo(() => {
     if (!bundle) return []
@@ -109,7 +103,6 @@ const App = () => {
             <PlaybackBar playback={playback} bundle={bundle} />
             <BoardView
               bundle={bundle}
-              snapshots={snapshots}
               events={eventsForView}
               playback={playback}
             />
@@ -117,7 +110,7 @@ const App = () => {
         ) : (
           <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-10 text-center text-slate-400">
             Run <code>just emergent-run</code> (OpenRouter required) or drop a
-            recorded JSON bundle to stream the investigation as it happened.
+            recorded JSON bundle to replay the investigation as it happened.
           </div>
         )}
       </div>

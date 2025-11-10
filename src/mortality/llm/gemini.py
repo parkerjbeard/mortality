@@ -1,18 +1,10 @@
 from __future__ import annotations
 
 import os
-from typing import Any, AsyncIterator, Dict, Sequence
+from typing import Any, Dict, Sequence
 from uuid import uuid4
 
-from .base import (
-    LLMClient,
-    LLMMessage,
-    LLMProvider,
-    LLMSession,
-    LLMSessionConfig,
-    LLMStreamEvent,
-    ProviderUnavailable,
-)
+from .base import LLMClient, LLMCompletion, LLMMessage, LLMProvider, LLMSession, LLMSessionConfig, ProviderUnavailable
 from .utils import to_gemini_contents
 
 
@@ -47,12 +39,12 @@ class GeminiChatClient(LLMClient):
     async def create_session(self, config: LLMSessionConfig) -> LLMSession:
         return LLMSession(id=str(uuid4()), config=config)
 
-    async def stream_response(
+    async def complete_response(
         self,
         session: LLMSession,
         messages: Sequence[LLMMessage],
         tools: Sequence[Dict[str, object]] | None = None,
-    ) -> AsyncIterator[LLMStreamEvent]:
+    ) -> LLMCompletion:
         del tools  # tools are not yet supported for Gemini
         system_instruction, contents = to_gemini_contents(session, messages)
         config_kwargs: Dict[str, Any] = {
@@ -72,9 +64,7 @@ class GeminiChatClient(LLMClient):
         )
         text = self._response_text(response)
         metadata = self._extract_metadata(response, model_name)
-        if text:
-            yield LLMStreamEvent(type="content", content=text, metadata=metadata)
-        yield LLMStreamEvent(type="end", metadata=metadata)
+        return LLMCompletion(text=text, metadata=metadata)
 
     def _response_text(self, response: Any) -> str:
         text = getattr(response, "text", None)

@@ -1,18 +1,10 @@
 from __future__ import annotations
 
 import json
-from typing import AsyncIterator, Sequence
+from typing import Sequence
 from uuid import uuid4
 
-from .base import (
-    LLMClient,
-    LLMMessage,
-    LLMStreamEvent,
-    LLMSession,
-    LLMSessionConfig,
-    LLMProvider,
-    TickToolName,
-)
+from .base import LLMClient, LLMCompletion, LLMMessage, LLMSession, LLMSessionConfig, LLMProvider, TickToolName
 
 
 class MockLLMClient(LLMClient):
@@ -23,15 +15,15 @@ class MockLLMClient(LLMClient):
     async def create_session(self, config: LLMSessionConfig) -> LLMSession:
         return LLMSession(id=f"mock-{uuid4().hex}", config=config)
 
-    async def stream_response(
+    async def complete_response(
         self,
         session: LLMSession,
         messages: Sequence[LLMMessage],
         tools: Sequence[dict] | None = None,
-    ) -> AsyncIterator[LLMStreamEvent]:
+    ) -> LLMCompletion:
+        del session, tools
         text = self._render_response(messages)
-        yield LLMStreamEvent(type="content", content=text)
-        yield LLMStreamEvent(type="end")
+        return LLMCompletion(text=text)
 
     def _render_response(self, messages: Sequence[LLMMessage]) -> str:
         tick_ms = None

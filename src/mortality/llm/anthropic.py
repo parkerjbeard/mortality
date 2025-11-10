@@ -1,18 +1,10 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence
 from uuid import uuid4
 
-from .base import (
-    LLMClient,
-    LLMMessage,
-    LLMProvider,
-    LLMSession,
-    LLMSessionConfig,
-    LLMStreamEvent,
-    ProviderUnavailable,
-)
+from .base import LLMClient, LLMCompletion, LLMMessage, LLMProvider, LLMSession, LLMSessionConfig, ProviderUnavailable
 from .utils import to_anthropic_payload
 
 if TYPE_CHECKING:  # pragma: no cover - typing aid
@@ -54,12 +46,12 @@ class AnthropicMessagesClient(LLMClient):
     async def create_session(self, config: LLMSessionConfig) -> LLMSession:
         return LLMSession(id=str(uuid4()), config=config)
 
-    async def stream_response(
+    async def complete_response(
         self,
         session: LLMSession,
         messages: Sequence[LLMMessage],
         tools: Sequence[Dict[str, object]] | None = None,
-    ) -> AsyncIterator[LLMStreamEvent]:
+    ) -> LLMCompletion:
         system_prompt, conversation = to_anthropic_payload(session, messages)
         payload = {
             "model": session.config.model,
@@ -75,26 +67,42 @@ class AnthropicMessagesClient(LLMClient):
             if converted:
                 payload["tools"] = converted
 
-        async with self._client.messages.stream(**payload) as stream:
-            async for text in stream.text_stream:
-                if not text:
-                    continue
-                yield LLMStreamEvent(type="content", content=text)
+        final_message = await self._client.messages.create(**payload)
+        text = self._response_text(final_message)
+        metadata = self._extract_metadata(final_message, session.config.model)
+        return LLMCompletion(text=text, metadata=metadata)
 
-        final_message = await stream.get_final_message()
-        usage = getattr(final_message, "usage", None)
+    def _response_text(self, message: Any) -> str:
+        fragments: list[str] = []
+        content = getattr(message, "content", None)
+        if not content:
+            return ""
+        for block in content:
+            block_type = getattr(block, "type", None)
+            if block_type is None and isinstance(block, dict):
+                block_type = block.get("type")
+            if block_type != "text":
+                continue
+            text = getattr(block, "text", None)
+            if text is None and isinstance(block, dict):
+                text = block.get("text")
+            if isinstance(text, str):
+                fragments.append(text)
+        return "".join(fragments)
+
+    def _extract_metadata(self, message: Any, fallback_model: str) -> Dict[str, Any]:
+        usage = getattr(message, "usage", None)
         if usage is not None and hasattr(usage, "model_dump"):
             usage_payload = usage.model_dump()
         elif usage is not None and hasattr(usage, "dict"):
             usage_payload = usage.dict()
         else:
             usage_payload = usage
-        metadata = {
-            "stop_reason": getattr(final_message, "stop_reason", None),
-            "model": getattr(final_message, "model", session.config.model),
+        return {
+            "stop_reason": getattr(message, "stop_reason", None),
+            "model": getattr(message, "model", fallback_model),
             "usage": usage_payload,
         }
-        yield LLMStreamEvent(type="end", metadata=metadata)
 
     def _convert_tools(self, tools: Sequence[Dict[str, object]]) -> List[Dict[str, object]]:
         """Normalize OpenAI-style tool definitions into Anthropic schema."""
