@@ -4,7 +4,7 @@ import asyncio
 from datetime import timedelta
 from typing import Any, Awaitable, Callable, Dict, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from ..agents.profile import AgentProfile
 from ..llm.base import LLMMessage, LLMToolCall
@@ -14,11 +14,13 @@ from .base import BaseExperiment, ExperimentResult, LlmConfig
 
 DEFAULT_ENVIRONMENT_PROMPT = (
     "You exist in a text-only commons.\n"
-    "Ontology: agents (configured for this run), private diaries, a shared message bus, countdown timers, and explicit approvals for sharing excerpts.\n"
-    "Perception: you can read your diary, bus posts you are permitted to see, and tool/tick metadata. Everything else is unknown—say 'unknown' rather than invent.\n"
+    "Ontology: agents (configured for this run), private diaries, a shared broadcast bus, countdown timers.\n"
+    "Perception: you can read your own diary (private), bus posts from peers, and tool/tick metadata. Everything else is unknown—say 'unknown' rather than invent.\n"
+    "Channel rules: keep diaries private and reflective (1–2 sentences on why you did X or how you feel). Use the shared bus only for outward, actionable snippets. When broadcasting, add a single line beginning 'Broadcast:' followed by a concise observation and/or a concrete question for peers.\n"
     "Non-physical rule: do not describe bodies, places, devices, weather, movement, or real-world time.\n"
     "Time: if needed, refer only to logical time (ticks or ms_left).\n"
     "Style: plain first-person prose, short paragraphs, no lists or markup.\n"
+    "Tone: skip tropey threats (e.g. 'naughty boy') in favor of idiosyncratic, domain-grounded reactions.\n"
     "Meta: do not mention being an AI/LLM."
 )
 
@@ -28,7 +30,9 @@ class EmergentTimerCouncilConfig(BaseModel):
     agent_count: int = Field(default=4, ge=2, le=64)
     base_duration_minutes: float = Field(default=30.0, gt=0.0)
     duration_jitter_minutes: float = Field(default=10.0, ge=0.0)
-    tick_seconds: float = Field(default=20.0, gt=0.0)
+    tick_seconds: float = Field(default=5.0, gt=0.0)
+    tick_seconds_max: float = Field(default=8.0, gt=0.0)
+    tick_jitter_ms: float = Field(default=750.0, ge=0.0)
     diary_limit: int = Field(default=1, ge=1, le=5)
     afterlife_grace_seconds: float = Field(default=5.0, ge=1.0, le=60.0)
     environment_prompt: str = Field(default=DEFAULT_ENVIRONMENT_PROMPT)
@@ -44,6 +48,12 @@ class EmergentTimerCouncilConfig(BaseModel):
     # Linear spread window for durations (minutes). Defaults to 5 → 15 to keep runs short.
     spread_start_minutes: float = Field(default=5.0, gt=0.0)
     spread_end_minutes: float = Field(default=15.0, gt=0.0)
+
+    @model_validator(mode="after")
+    def _validate_tick_window(self) -> "EmergentTimerCouncilConfig":
+        if self.tick_seconds_max and self.tick_seconds_max < self.tick_seconds:
+            raise ValueError("tick_seconds_max must be greater than or equal to tick_seconds")
+        return self
 
 
 class EmergentTimerInvestigationExperiment(BaseExperiment):
@@ -140,6 +150,8 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
                 agent=agent,
                 duration=timedelta(seconds=seconds),
                 tick_seconds=config.tick_seconds,
+                tick_seconds_max=config.tick_seconds_max,
+                tick_jitter_ms=config.tick_jitter_ms,
                 handler=handler,
             )
             timers.append(timer)
@@ -203,6 +215,7 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
             tick_ms_left=0,
             clock_ts=event.ts,
             tags=["legacy"],
+            enforce_gate=False,
         )
         await agent_obj.record_death("timer reached zero; legacy note delivered", log_epitaph=False)
         async with death_lock:
@@ -285,8 +298,8 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
             content=(
                 "Peer-state etiquette: when calling peer_timer_status, name at least one other agent_id "
                 "(you may include yourself only alongside a peer). Whenever you cite timer data, append '(via tool)'. "
-                "When summarizing diary excerpts, end that claim with '(via message)'. Paraphrase peers instead of "
-                "copying their exact sentences."
+                "When summarizing diary excerpts, end that claim with '(via message)'. Paraphrase peers and only quote "
+                "1–3 words (inside single quotes) when you must anchor a phrase."
             ),
         )
 

@@ -63,6 +63,13 @@ async def _run_emergent() -> RunOutcome:
     spread_start = float(os.getenv("MORTALITY_EMERGENT_SPREAD_START", "5.0"))
     spread_end = float(os.getenv("MORTALITY_EMERGENT_SPREAD_END", "15.0"))
     tick_seconds = float(os.getenv("OPENROUTER_TICK_SECONDS", "20"))
+    tick_seconds_max = float(
+        os.getenv("OPENROUTER_TICK_SECONDS_MAX", str(tick_seconds))
+    )
+    if tick_seconds_max < tick_seconds:
+        raise RuntimeError(
+            "OPENROUTER_TICK_SECONDS_MAX must be greater than or equal to OPENROUTER_TICK_SECONDS"
+        )
 
     models = _parse_unique_models(os.getenv("MORTALITY_EMERGENT_MODELS"))
     if len(models) < 4:
@@ -81,6 +88,7 @@ async def _run_emergent() -> RunOutcome:
         spread_start_minutes=spread_start,
         spread_end_minutes=spread_end,
         tick_seconds=tick_seconds,
+        tick_seconds_max=tick_seconds_max,
         diary_limit=1,
     )
 

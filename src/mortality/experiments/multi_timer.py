@@ -52,7 +52,7 @@ class CascadingDeathsExperiment(BaseExperiment):
                     requestor_id=agent_obj.state.profile.agent_id,
                     owners=[peer.state.profile.agent_id for peer in agents if peer is not agent_obj],
                     limit_per_owner=1,
-                    reason="Observe plaza diary traffic.",
+                    reason="Observe plaza bus traffic.",
                 )
                 prompts.extend(peer_messages)
             context = self._observed_context(agent_obj.state.profile.display_name, death_feed)

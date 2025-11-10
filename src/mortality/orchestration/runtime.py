@@ -9,8 +9,7 @@ from ..agents.lifecycle import MortalityAgent
 from ..agents.memory import AgentMemory
 from ..agents.profile import AgentProfile
 from ..llm.base import LLMMessage, LLMSessionConfig, client_registry
-from ..mcp.bus import DiaryPermissionHandler, DiaryScope, SharedMCPBus
-from ..mcp.permissions import AgentConsentPrompter
+from ..mcp.bus import BroadcastScope, SharedMCPBus
 from ..llm.providers import register_default_clients
 from ..tasks.timers import MortalityTimer, TimerEvent
 from ..telemetry.base import NullTelemetrySink, TelemetrySink
@@ -26,7 +25,6 @@ class MortalityRuntime:
         telemetry: TelemetrySink | None = None,
         auto_register_clients: bool = True,
         shared_bus: SharedMCPBus | None = None,
-        permission_handler_factory: Callable[[MortalityAgent], DiaryPermissionHandler] | None = None,
     ) -> None:
         self.telemetry = telemetry or NullTelemetrySink()
         self._registry = client_registry
@@ -36,7 +34,8 @@ class MortalityRuntime:
         self._timers: Dict[str, MortalityTimer] = {}
         self._timer_tasks: Dict[str, asyncio.Task[None]] = {}
         self.shared_bus = shared_bus or SharedMCPBus()
-        self._permission_handler_factory = permission_handler_factory or (lambda agent: AgentConsentPrompter(agent))
+        if self.shared_bus:
+            self.shared_bus.subscribe_broadcasts(self._handle_bus_broadcast)
         self._peer_entry_digests: Dict[Tuple[str, str], str] = {}
         # Track last known ms_left per agent to enable peer-timer snapshots
         self._last_ms_left: Dict[str, int] = {}
@@ -60,8 +59,7 @@ class MortalityRuntime:
         )
         self._agents[profile.agent_id] = agent
         if self.shared_bus:
-            handler = self._permission_handler_factory(agent) if self._permission_handler_factory else None
-            self.shared_bus.register_agent(profile=profile, handler=handler)
+            self.shared_bus.register_agent(profile=profile)
         self.telemetry.emit(
             "agent.spawned",
             {
@@ -84,8 +82,17 @@ class MortalityRuntime:
         duration: timedelta,
         tick_seconds: float,
         handler: TickHandler,
+        *,
+        tick_seconds_max: float | None = None,
+        tick_jitter_ms: float = 0.0,
     ) -> MortalityTimer:
-        timer = MortalityTimer(agent_id=agent.state.profile.agent_id, duration=duration, tick_seconds=tick_seconds)
+        timer = MortalityTimer(
+            agent_id=agent.state.profile.agent_id,
+            duration=duration,
+            tick_seconds=tick_seconds,
+            tick_seconds_max=tick_seconds_max,
+            tick_jitter_ms=tick_jitter_ms,
+        )
         duration_ms = int(duration.total_seconds() * 1000)
         started_at = datetime.now(timezone.utc).isoformat()
         self.telemetry.emit(
@@ -94,6 +101,8 @@ class MortalityRuntime:
                 "agent_id": agent.state.profile.agent_id,
                 "duration_ms": duration_ms,
                 "tick_seconds": tick_seconds,
+                "tick_seconds_max": tick_seconds_max,
+                "tick_jitter_ms": tick_jitter_ms,
                 "started_at": started_at,
             },
         )
@@ -128,6 +137,24 @@ class MortalityRuntime:
         self._timer_tasks[agent.state.profile.agent_id] = timer.start(_dispatch)
         return timer
 
+    def _handle_bus_broadcast(self, publisher_id: str) -> None:
+        """Trigger immediate micro-turns for peers after a new broadcast."""
+
+        nudged = 0
+        for agent_id, timer in self._timers.items():
+            if agent_id == publisher_id:
+                continue
+            timer.request_micro_turn()
+            nudged += 1
+        if nudged:
+            self.telemetry.emit(
+                "timer.micro_turn",
+                {
+                    "publisher_id": publisher_id,
+                    "listeners_notified": nudged,
+                },
+            )
+
     async def peer_diary_messages(
         self,
         *,
@@ -138,8 +165,9 @@ class MortalityRuntime:
     ) -> list[LLMMessage]:
         if not self.shared_bus:
             return []
-        scope = DiaryScope(limit=limit_per_owner)
-        resources = await self.shared_bus.fetch_resources(
+        # Diaries are private; peer messages now surface explicit broadcasts.
+        scope = BroadcastScope(limit=limit_per_owner)
+        resources = await self.shared_bus.fetch_broadcasts(
             requestor_id=requestor_id,
             owners=owners,
             scope=scope,

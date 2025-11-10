@@ -44,6 +44,9 @@ class AutoGenPersona(BaseModel):
             "Act without waiting for human prompts, infer hidden countdown mechanics, cross-reference other agents, "
             "and summarize insights into your diary after every turn."
         )
+        lines.append(
+            "Never waste tokens on manual timestamps such as '2039-07-04 16:22 UTC —'; the runtime logs the time for you."
+        )
         lines.append("Explicitly say 'DISSOLVE' only when the council has converged or exhausted its leads.")
         return "\n".join(lines)
 

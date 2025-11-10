@@ -1,21 +1,41 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { NormalizedBundle } from '@/lib/bundle'
 import { usePlayback } from '@/hooks/usePlayback'
 import { BundleLoader } from '@/components/BundleLoader'
 import { PlaybackBar } from '@/components/PlaybackBar'
 import { BoardView } from '@/components/BoardView'
 import { formatDuration, formatTimestamp } from '@/lib/time'
+import { EventFilters } from '@/components/EventFilters'
+import {
+  EventCategory,
+  createDefaultFilterState,
+} from '@/lib/filters'
 
 const App = () => {
   const [bundle, setBundle] = useState<NormalizedBundle | null>(null)
   const timeline = bundle?.timeline ?? { startMs: 0, endMs: 1 }
   const playback = usePlayback(timeline)
   const { seekMs, setSpeed, setPlaying } = playback
+  const [filters, setFilters] = useState(createDefaultFilterState)
 
   const eventsForView = useMemo(() => {
     if (!bundle) return []
     return bundle.events.filter((event) => event.tsMs <= playback.playheadMs)
   }, [bundle, playback.playheadMs])
+
+  const activeCategories = useMemo(() => {
+    const enabled = Object.entries(filters)
+      .filter(([, value]) => value)
+      .map(([key]) => key as EventCategory)
+    return new Set<EventCategory>(enabled)
+  }, [filters])
+
+  const handleToggleFilter = useCallback((category: EventCategory) => {
+    setFilters((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }))
+  }, [])
 
   const handleBundleLoaded = (next: NormalizedBundle) => {
     setBundle(next)
@@ -69,6 +89,7 @@ const App = () => {
         </header>
         {bundle ? (
           <>
+            <EventFilters filters={filters} onToggle={handleToggleFilter} />
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/5 bg-panel/30 p-4 text-sm text-slate-400">
               <span>
                 Exported{' '}
@@ -105,6 +126,8 @@ const App = () => {
               bundle={bundle}
               events={eventsForView}
               playback={playback}
+              activeCategories={activeCategories}
+              diaryEnabled={filters.diary}
             />
           </>
         ) : (

@@ -167,19 +167,23 @@ class MortalityAgent:
         tick_ms_left: int,
         tags: list[str] | None = None,
         clock_ts: datetime | None = None,
+        enforce_gate: bool = True,
     ) -> DiaryEntry | None:
-        decision = await self._action_gate.guard_diary(text=text)
-        if not decision.allowed:
-            self._telemetry.emit(
-                "agent.action_blocked",
-                {
-                    "agent_id": self.state.profile.agent_id,
-                    "kind": "diary",
-                    "reason": decision.reason or "unknown",
-                    "tick_ms_left": tick_ms_left,
-                },
-            )
-            return None
+        decision_new_keywords: set[str] | None = None
+        if enforce_gate:
+            decision = await self._action_gate.guard_diary(text=text)
+            if not decision.allowed:
+                self._telemetry.emit(
+                    "agent.action_blocked",
+                    {
+                        "agent_id": self.state.profile.agent_id,
+                        "kind": "diary",
+                        "reason": decision.reason or "unknown",
+                        "tick_ms_left": tick_ms_left,
+                    },
+                )
+                return None
+            decision_new_keywords = decision.new_keywords or set()
         entry = self.state.memory.remember(
             text,
             tick_ms_left=tick_ms_left,
@@ -191,11 +195,24 @@ class MortalityAgent:
             {
                 "agent_id": self.state.profile.agent_id,
                 "entry": entry.model_dump(mode="json"),
-                "new_keywords": sorted(decision.new_keywords or []),
+                "new_keywords": sorted(decision_new_keywords or []),
             },
         )
+        # Diaries are private; if the entry contains an explicit broadcast line,
+        # publish only that snippet to the shared bus.
         if self._shared_bus:
-            self._shared_bus.publish_entry(self.state.profile.agent_id, entry)
+            snippet = self._extract_broadcast_line(text)
+            if snippet:
+                self._shared_bus.publish_broadcast(self.state.profile.agent_id, snippet)
+                self._telemetry.emit(
+                    "agent.broadcast",
+                    {
+                        "agent_id": self.state.profile.agent_id,
+                        "text": snippet,
+                        "tick_ms_left": tick_ms_left,
+                        "life_index": self.state.memory.life_index,
+                    },
+                )
         return entry
 
     def diary_context_message(self) -> LLMMessage | None:
@@ -243,6 +260,7 @@ class MortalityAgent:
     def respawn(self) -> None:
         self.state.memory.start_new_life()
         self.state.respawn()
+        self._action_gate.reset()
         self._telemetry.emit(
             "agent.respawn",
             {"agent_id": self.state.profile.agent_id, "life_index": self.state.memory.life_index},
@@ -320,5 +338,25 @@ class MortalityAgent:
             return json.dumps(payload, ensure_ascii=False)
         except TypeError:
             return json.dumps({"result": str(payload)}, ensure_ascii=False)
+
+    def _extract_broadcast_line(self, text: str) -> str | None:
+        """Extract a single-line 'Broadcast:' snippet if present.
+
+        The pattern is intentionally permissive to avoid over-constraining style:
+        any line starting with 'Broadcast' (case-insensitive) followed by a
+        separator like ':', '—', or '->' is treated as a shareable snippet. Only
+        that line's trailing content is published to the shared bus.
+        """
+        import re
+
+        pattern = re.compile(r"(?i)^\s*broadcast\s*[:\-–—>]+\s*(.+)$")
+        for raw in text.splitlines():
+            line = raw.strip()
+            m = pattern.match(line)
+            if m:
+                snippet = m.group(1).strip()
+                if snippet:
+                    return snippet
+        return None
 
 __all__ = ["MortalityAgent"]

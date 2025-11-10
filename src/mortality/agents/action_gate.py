@@ -99,6 +99,11 @@ class ActionGate:
         if interval_ms and interval_ms > 0:
             self._tick_interval_ms = interval_ms
 
+    def reset(self) -> None:
+        """Clear any cached signatures/keywords so the next life starts fresh."""
+        self._last_action_signature = None
+        self._last_diary_keywords.clear()
+
     async def guard_assistant(self, *, text: str) -> GateDecision:
         await self._dwell(stage="reflect")
         normalized = self._normalize(text)

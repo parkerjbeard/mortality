@@ -1,23 +1,12 @@
-"""Utilities for exposing Mortality diarist state over the Model Context Protocol."""
+"""Utilities for exposing Mortality state over the Model Context Protocol.
 
-from .bus import (
-    DiaryAccessDecision,
-    DiaryAccessRequest,
-    DiaryAccessToken,
-    DiaryPermissionError,
-    DiaryPermissionHandler,
-    DiaryResource,
-    DiaryScope,
-    SharedMCPBus,
-)
+Diaries are private; the shared bus only exposes explicit broadcast snippets.
+"""
+
+from .bus import BroadcastResource, BroadcastScope, SharedMCPBus
 
 __all__ = [
-    "DiaryAccessDecision",
-    "DiaryAccessRequest",
-    "DiaryAccessToken",
-    "DiaryPermissionError",
-    "DiaryPermissionHandler",
-    "DiaryResource",
-    "DiaryScope",
+    "BroadcastResource",
+    "BroadcastScope",
     "SharedMCPBus",
 ]
