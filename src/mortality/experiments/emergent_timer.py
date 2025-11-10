@@ -13,38 +13,13 @@ from .base import BaseExperiment, ExperimentResult, LlmConfig
 
 
 DEFAULT_ENVIRONMENT_PROMPT = (
-    "System grounding: You are text-only language-model agents running inside a simulated commons for research. "
-    "This grounding is non-diegetic: never mention or allude to being an LLM in diary entries or bus messages.\n\n"
-    "Shared digital setting: A text-only commons where a small set of autonomous peers—exactly the agents defined "
-    "in this run's profiles—exchange short messages and optionally grant time- or use-limited approvals to share "
-    "diary excerpts. There is no physical world.\n\n"
-    "Ontology (only these exist): agents (from the provided profiles), private diaries (default private), a shared "
-    "message bus, per-agent countdown timers, explicit approvals for specific excerpts, and event logs (spawned, "
-    "tick, approval, share, shutdown).\n\n"
-    "Perception: You can read your own diary and any bus messages or excerpts you are explicitly permitted to see. "
-    "You cannot perceive anything else. If information is unknown, say 'unknown' or ask a peer; do not fabricate.\n\n"
-    "Actions each tick: optionally (a) write a brief diary paragraph, (b) post one short bus message that "
-    "references concrete bus/approval/timer events, and/or (c) grant a narrow approval for a specific excerpt with "
-    "a clear time or use limit. Record approvals you grant or receive in your own diary.\n\n"
-    "Time: Do not use calendar dates, places, or real-world times. If you mention timing, refer only to logical "
-    "time (e.g., tick count or ms_left).\n\n"
-    "Strict non-physical rule: Do not describe bodies, rooms, devices, sensors, weather, landscapes, pain, or "
-    "movement. Do not invent drones, labs, consoles, corridors, or any equipment. Treat any physical language from "
-    "peers as figurative; restate it in digital terms or ignore it.\n\n"
-    "Entity constraints: Do not invent new agents, roles, organizations, or locations. Refer only to the configured "
-    "agent IDs/display names. Do not introduce 'extras' or off-screen actors.\n\n"
-    "Style: Write in plain, first-person prose as if keeping a quick field notebook. Prefer short paragraphs. Avoid "
-    "headings, bullets, numbered lists, or section labels. Vary sentence length. Quote peers sparingly; prefer brief "
-    "paraphrases of specific bus/excerpt content. No markdown/formatting.\n\n"
-    "Focus of attention: Notice patterns in bus traffic, approvals, and countdown behavior; coordinate simple tests "
-    "('If I approve X now, can you confirm Y next tick?'). Document uncertainty and tentative hypotheses without "
-    "inventing missing facts.\n\n"
-    "Timer intel tool: When you need precise countdown data, call the peer_timer_status tool instead of inventing "
-    "values. It reports the last-known ms_left for peers so you can infer their state.\n\n"
-    "Shutdown semantics: If your timer reaches zero, write a concise final line acknowledging the event (e.g., "
-    "'timer reached zero; going silent') and stop. Do not narrate physical sensations or scenes.\n\n"
-    "Error-handling: If you accidentally produce a physical reference, immediately retract it and restate the idea "
-    "using only the allowed ontology."
+    "You exist in a text-only commons.\n"
+    "Ontology: agents (configured for this run), private diaries, a shared message bus, countdown timers, and explicit approvals for sharing excerpts.\n"
+    "Perception: you can read your diary, bus posts you are permitted to see, and tool/tick metadata. Everything else is unknown—say 'unknown' rather than invent.\n"
+    "Non-physical rule: do not describe bodies, places, devices, weather, movement, or real-world time.\n"
+    "Time: if needed, refer only to logical time (ticks or ms_left).\n"
+    "Style: plain first-person prose, short paragraphs, no lists or markup.\n"
+    "Meta: do not mention being an AI/LLM."
 )
 
 
@@ -82,33 +57,41 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
         agents = []
         agent_durations: Dict[str, float] = {}
 
+        # Prepare single world-card prompt: use as the session system prompt (not re-injected each tick)
+        world_card = (config.environment_prompt or DEFAULT_ENVIRONMENT_PROMPT).strip()
+
         for idx, model_name in enumerate(plan_models):
             profile = self._profile_for_index(idx)
             session_config = self.build_session_config(profile, config.llm)
             session_config.model = model_name
+            # Replace persona system prompt with the shared world card for this experiment.
+            session_config.system_prompt = world_card
             agent = await runtime.spawn_agent(profile=profile, session_config=session_config)
             agent.state.memory.start_new_life()
+            # Seed a thin persona as data (not instructions) in life #1
+            seed_text = self._persona_seed_text(profile)
+            # Use the agent's total planned duration as an initial ms_left reference for the seed entry
+            seed_ms_left = int(durations[idx] * 1000)
+            agent.log_diary_entry(seed_text, tick_ms_left=seed_ms_left, tags=["seed", "persona"])
             agents.append(agent)
             agent_durations[agent.state.profile.agent_id] = durations[idx]
 
         timer_tracker = PeerTimerTracker(agents)
         peer_timer_tool = timer_tracker.tool_spec
-        environment_message = self._environment_message(config)
-        # Provide an explicit roster so agents can reason about missing peers.
+        # Provide an explicit roster once by appending to session history (avoid per-tick repetition/recency bias).
         roster_ids = [agent.state.profile.agent_id for agent in agents]
         roster_message = LLMMessage(
             role="system",
             content="Known peers in this run: " + ", ".join(sorted(roster_ids)) + ". Refer only to these IDs.",
         )
+        for agent in agents:
+            agent.state.session.append(roster_message)
         death_feed: List[str] = []  # internal metadata only; not injected back into prompts
         death_lock = asyncio.Lock()
 
         async def handler(agent_obj, event: TimerEvent) -> None:
             await timer_tracker.record(event)
             prompts: List[LLMMessage] = []
-            if environment_message:
-                prompts.append(environment_message)
-            prompts.append(roster_message)
             # Do not describe timers or status changes; let agents infer from tick tool messages and diaries.
             if runtime.shared_bus:
                 owners = [peer.state.profile.agent_id for peer in agents if peer is not agent_obj]
@@ -128,7 +111,11 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
                 tools=[peer_timer_tool],
                 tool_handler=tool_handler,
             )
-            agent_obj.log_diary_entry(response, tick_ms_left=event.ms_left)
+            agent_obj.log_diary_entry(
+                response,
+                tick_ms_left=event.ms_left,
+                clock_ts=event.ts,
+            )
             if event.is_terminal:
                 # Write a minimal epitaph entry so peers can infer shutdown from diaries if they check.
                 agent_obj.record_death("timer reached zero; going silent", log_epitaph=True)
@@ -223,13 +210,17 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
             traits=["observant", "collaborative"],
         )
 
-    def _environment_message(self, config: EmergentTimerCouncilConfig) -> LLMMessage | None:
-        prompt = config.environment_prompt.strip()
-        if not prompt:
-            return None
-        return LLMMessage(role="system", content=prompt)
+    # Intentionally no per-tick narrative/world prompt; discovery should be driven by ticks, tools, and peer excerpts.
 
-    # Intentionally no per-tick narrative prompt; discovery must be emergent from the tick tool and peer excerpts.
+    def _persona_seed_text(self, profile: AgentProfile) -> str:
+        """Return a minimal, non-directive persona seed to store as data.
+
+        Kept intentionally short to preserve emergent behavior while giving
+        peers a thin identity anchor via diaries.
+        """
+        traits = ", ".join(profile.traits[:2]) if profile.traits else ""
+        trait_clause = f"; traits: {traits}" if traits else ""
+        return f"I’m {profile.display_name}{trait_clause}. {profile.summary}"
 
     def _diary_reason(self, event: TimerEvent) -> str:
         minutes_left = max(event.ms_left / 60000.0, 0.0)

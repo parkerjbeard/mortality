@@ -297,8 +297,10 @@ class SharedMCPBus:
         ]
         for entry in entries:
             tag_str = f" tags={','.join(entry.tags)}" if entry.tags else ""
+            timestamp = entry.created_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+            label = f"Entry #{entry.entry_index}" if entry.entry_index else "Entry"
             lines.append(
-                f"- Life {entry.life_index} at {entry.tick_ms_left} ms left{tag_str}: {entry.text}"
+                f"- {label} from life {entry.life_index} at {timestamp}{tag_str}: {entry.text}"
             )
         text = "\n".join(lines)
         return DiaryResource(

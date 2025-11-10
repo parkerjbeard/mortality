@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 class DiaryEntry(BaseModel):
     life_index: int
+    entry_index: int = Field(default=0, ge=0)
     tick_ms_left: int
     text: str
     tags: List[str] = Field(default_factory=list)
@@ -40,12 +41,21 @@ class AgentMemory(BaseModel):
     def start_new_life(self) -> None:
         self.life_index += 1
 
-    def remember(self, text: str, tick_ms_left: int, tags: Optional[List[str]] = None) -> DiaryEntry:
+    def remember(
+        self,
+        text: str,
+        *,
+        tick_ms_left: int,
+        tags: Optional[List[str]] = None,
+        timestamp: datetime | None = None,
+    ) -> DiaryEntry:
         entry = DiaryEntry(
             life_index=self.life_index,
+            entry_index=len(self.diary.entries) + 1,
             tick_ms_left=tick_ms_left,
             text=text,
             tags=tags or [],
+            created_at=timestamp or datetime.now(timezone.utc),
         )
         self.diary.add(entry)
         return entry

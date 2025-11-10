@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 const diaryEntrySchema = z.object({
   life_index: z.number(),
+  entry_index: z.number().int().nonnegative().optional().default(0),
   tick_ms_left: z.number(),
   text: z.string(),
   tags: z.array(z.string()),

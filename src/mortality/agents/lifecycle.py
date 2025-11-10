@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Literal, Sequence
 
 from ..llm.base import LLMClient, LLMMessage, LLMSessionConfig, LLMToolCall, make_tick_tool_message
@@ -116,8 +117,20 @@ class MortalityAgent:
             self.state.last_tick_ms = tick_ms_left
             return transcript
 
-    def log_diary_entry(self, text: str, tick_ms_left: int, tags: list[str] | None = None) -> DiaryEntry:
-        entry = self.state.memory.remember(text, tick_ms_left=tick_ms_left, tags=tags)
+    def log_diary_entry(
+        self,
+        text: str,
+        *,
+        tick_ms_left: int,
+        tags: list[str] | None = None,
+        clock_ts: datetime | None = None,
+    ) -> DiaryEntry:
+        entry = self.state.memory.remember(
+            text,
+            tick_ms_left=tick_ms_left,
+            tags=tags,
+            timestamp=clock_ts,
+        )
         self._telemetry.emit(
             "agent.diary_entry",
             {
@@ -133,8 +146,10 @@ class MortalityAgent:
         latest = self.state.memory.diary.latest()
         if not latest:
             return None
+        timestamp = latest.created_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+        label = f"entry #{latest.entry_index}" if latest.entry_index else "latest entry"
         summary = (
-            f"Previous life #{latest.life_index} notes (time remaining {latest.tick_ms_left} ms):\n"
+            f"Reference {label} from life {latest.life_index} at {timestamp}:\n"
             f"{latest.text}"
         )
         return LLMMessage(role="system", content=summary)
@@ -142,7 +157,10 @@ class MortalityAgent:
     def record_death(self, epitaph: str = "", *, log_epitaph: bool = True) -> None:
         if log_epitaph:
             self.log_diary_entry(
-                epitaph or "Fell silent.", tick_ms_left=self.state.last_tick_ms or 0, tags=["epitaph"]
+                epitaph or "Fell silent.",
+                tick_ms_left=self.state.last_tick_ms or 0,
+                tags=["epitaph"],
+                clock_ts=datetime.now(timezone.utc),
             )
         self.state.mark_dead()
         self._telemetry.emit(

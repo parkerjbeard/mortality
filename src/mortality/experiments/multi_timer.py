@@ -60,7 +60,11 @@ class CascadingDeathsExperiment(BaseExperiment):
                 prompts.append(context)
             prompts.append(self._prompt_for_event(agent_obj, event))
             response = await agent_obj.react(prompts, event.ms_left)
-            agent_obj.log_diary_entry(response, tick_ms_left=event.ms_left)
+            agent_obj.log_diary_entry(
+                response,
+                tick_ms_left=event.ms_left,
+                clock_ts=event.ts,
+            )
             if event.is_terminal:
                 agent_obj.record_death("Collapsed after witnessing peers.")
                 async with lock:

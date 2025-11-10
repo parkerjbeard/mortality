@@ -48,7 +48,11 @@ class DiaryRespawnExperiment(BaseExperiment):
                     prompts.append(diary_msg)
                 prompts.append(self._prompt_for_life(life, event))
                 response = await agent_obj.react(prompts, event.ms_left)
-                agent_obj.log_diary_entry(response, tick_ms_left=event.ms_left)
+                agent_obj.log_diary_entry(
+                    response,
+                    tick_ms_left=event.ms_left,
+                    clock_ts=event.ts,
+                )
                 if event.is_terminal:
                     agent_obj.record_death(f"Life {life + 1} concluded.")
 

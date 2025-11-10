@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { NormalizedBundle } from '@/lib/bundle'
 import { PlaybackControls } from '@/hooks/usePlayback'
-import { formatCountdown, formatTimestamp } from '@/lib/time'
+import { formatTimestamp } from '@/lib/time'
 import { MarkdownContent } from './MarkdownContent'
 
 interface DiaryPanelProps {
@@ -18,7 +18,7 @@ interface DiaryEntrySummary {
   text: string
   tags: string[]
   lifeIndex?: number
-  tickMsLeft?: number
+  entryIndex?: number
 }
 
 export const DiaryPanel = ({
@@ -53,6 +53,9 @@ export const DiaryPanel = ({
           {entries.map((entry) => {
             const profile = bundle.agents[entry.agentId]
             const name = profile?.display_name ?? entry.agentId
+            const label = entry.entryIndex
+              ? `${name} · Entry #${entry.entryIndex}`
+              : name
             const detail = entry.text.trim()
             return (
               <li key={entry.id}>
@@ -61,8 +64,10 @@ export const DiaryPanel = ({
                   onClick={() => onJump(entry.tsMs)}
                   className="block w-full rounded-2xl border border-white/5 bg-white/5 p-3 text-left text-slate-200 transition hover:border-white/30 hover:bg-white/10"
                 >
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span className="font-semibold text-slate-200">{name}</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                    <span className="font-semibold text-slate-200">
+                      {label}
+                    </span>
                     <span>{formatTimestamp(entry.tsMs)}</span>
                   </div>
                   <div className="mt-2">
@@ -72,11 +77,6 @@ export const DiaryPanel = ({
                     {entry.lifeIndex !== undefined && (
                       <span className="rounded-full bg-white/5 px-2 py-0.5">
                         Life {entry.lifeIndex}
-                      </span>
-                    )}
-                    {entry.tickMsLeft !== undefined && (
-                      <span className="rounded-full bg-white/5 px-2 py-0.5">
-                        {formatCountdown(entry.tickMsLeft)}
                       </span>
                     )}
                     {entry.tags.map((tag) => (
@@ -120,9 +120,9 @@ const collectDiaryEntries = (
           tags: Array.isArray(entry.tags) ? entry.tags.slice(0, 4) : [],
           lifeIndex:
             typeof entry.life_index === 'number' ? entry.life_index : undefined,
-          tickMsLeft:
-            typeof entry.tick_ms_left === 'number'
-              ? entry.tick_ms_left
+          entryIndex:
+            typeof entry.entry_index === 'number' && entry.entry_index > 0
+              ? entry.entry_index
               : undefined,
         })),
     )

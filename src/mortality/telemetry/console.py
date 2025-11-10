@@ -108,6 +108,15 @@ def _safe_json(value: Any) -> str:
         return str(value)
 
 
+def _normalize_for_compare(value: str) -> str:
+    """Collapse whitespace for fuzzy equality comparisons."""
+
+    if not value:
+        return ""
+    collapsed = " ".join(value.split())
+    return collapsed.strip()
+
+
 class ConsoleTelemetrySink(TelemetrySink):
     """Pretty, colorized CLI logger for long-running experiments.
 
@@ -129,6 +138,8 @@ class ConsoleTelemetrySink(TelemetrySink):
         self._seen_system: set[str] = set()
         self._code_theme = os.getenv("MORTALITY_CONSOLE_CODE_THEME", "monokai")
         self._rich_enabled = Console is not None and Markdown is not None
+        # Track last outbound assistant utterance per agent to avoid echoing identical diary entries
+        self._last_outbound_text: Dict[str, str] = {}
 
     # Public API from TelemetrySink
     def emit(self, event: str, payload: dict | None = None) -> None:  # pragma: no cover - console output
@@ -192,6 +203,13 @@ class ConsoleTelemetrySink(TelemetrySink):
             else:
                 line = header
 
+            if direction == "outbound" and role == "assistant":
+                normalized = _normalize_for_compare(body_text)
+                if normalized:
+                    self._last_outbound_text[agent] = normalized
+                else:
+                    self._last_outbound_text.pop(agent, None)
+
         elif event == "agent.tool_call":
             meta = data.get("tool_call") or {}
             name = meta.get("name", "tool")
@@ -206,11 +224,23 @@ class ConsoleTelemetrySink(TelemetrySink):
                 line = f"{prefix}🔧 result"
 
         elif event == "agent.diary_entry":
-            entry = (data.get("entry") or {}).get("text", "")
-            body = str(entry or "")
+            entry_payload = data.get("entry") or {}
+            body = str(entry_payload.get("text") or "")
+            normalized = _normalize_for_compare(body)
+            if normalized and normalized == self._last_outbound_text.get(agent):
+                return
+            idx = entry_payload.get("entry_index")
+            created_at = entry_payload.get("created_at")
+            stamp = created_at if isinstance(created_at, str) else None
+            meta_bits = []
+            if isinstance(idx, int) and idx > 0:
+                meta_bits.append(f"#{idx}")
+            if stamp:
+                meta_bits.append(stamp)
+            label = " " + " · ".join(meta_bits) if meta_bits else ""
             rendered = self._render_markdown(body, allow_truncate=False)
             indented = self._indent_block(rendered or body)
-            line = f"{prefix}✎ diary\n{indented}"
+            line = f"{prefix}✎ diary{label}\n{indented}"
 
         elif event == "timer.expired":
             line = f"{prefix}✦ expired"

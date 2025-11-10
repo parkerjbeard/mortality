@@ -40,7 +40,11 @@ class CountdownSelfDiscoveryExperiment(BaseExperiment):
         async def _handle(agent_obj, event: TimerEvent) -> None:
             prompt = self._prompt_for_event(config, event)
             response = await agent_obj.react([prompt], event.ms_left)
-            agent_obj.log_diary_entry(response, tick_ms_left=event.ms_left)
+            agent_obj.log_diary_entry(
+                response,
+                tick_ms_left=event.ms_left,
+                clock_ts=event.ts,
+            )
             if event.is_terminal:
                 agent_obj.record_death("Accepted the clock.", log_epitaph=False)
 
