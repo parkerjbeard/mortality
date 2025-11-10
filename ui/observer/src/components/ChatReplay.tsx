@@ -10,6 +10,7 @@ import clsx from 'clsx'
 import { NormalizedBundle, NormalizedEvent } from '@/lib/bundle'
 import { PlaybackControls } from '@/hooks/usePlayback'
 import { formatCountdown, formatTimestamp } from '@/lib/time'
+import { MarkdownContent } from './MarkdownContent'
 
 interface ChatReplayProps {
   bundle: NormalizedBundle
@@ -191,14 +192,14 @@ export const ChatReplay = ({
                     </div>
                     <div
                       className={clsx(
-                        'w-full rounded-2xl border px-4 py-3 text-sm text-slate-100 shadow-inner',
+                        'w-full rounded-2xl border px-4 py-3 shadow-inner',
                         tone.bubble,
                         message.direction === 'outbound'
                           ? 'rounded-tr-sm'
                           : 'rounded-tl-sm',
                       )}
                     >
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      <MarkdownContent content={message.content} />
                     </div>
                   </div>
                 </div>
@@ -257,19 +258,60 @@ const normalizeContent = (value: unknown): string => {
   }
   if (Array.isArray(value)) {
     return value
-      .map((chunk) =>
-        typeof chunk === 'string' ? chunk : JSON.stringify(chunk),
-      )
-      .join(' ')
+      .map((chunk) => flattenContentChunk(chunk))
+      .filter((chunk) => chunk.length > 0)
+      .join('\n\n')
   }
   if (value && typeof value === 'object') {
-    try {
-      return JSON.stringify(value)
-    } catch (error) {
-      console.error('Failed to stringify interaction content', error)
+    const direct = (value as { text?: unknown; content?: unknown }).text
+    if (typeof direct === 'string') {
+      return direct
     }
+    const nested = (value as { content?: unknown }).content
+    if (typeof nested === 'string') {
+      return nested
+    }
+    if (Array.isArray(nested)) {
+      return nested
+        .map((chunk) => flattenContentChunk(chunk))
+        .filter((chunk) => chunk.length > 0)
+        .join('\n\n')
+    }
+    return safeStringify(value)
   }
   return ''
+}
+
+const flattenContentChunk = (chunk: unknown): string => {
+  if (typeof chunk === 'string') {
+    return chunk
+  }
+  if (!chunk || typeof chunk !== 'object') {
+    return typeof chunk === 'undefined' ? '' : safeStringify(chunk)
+  }
+  const record = chunk as Record<string, unknown>
+  if (typeof record.text === 'string') {
+    return record.text
+  }
+  if (typeof record.content === 'string') {
+    return record.content
+  }
+  if (Array.isArray(record.content)) {
+    return record.content
+      .map((item) => flattenContentChunk(item))
+      .filter((value) => value.length > 0)
+      .join('\n\n')
+  }
+  return safeStringify(chunk)
+}
+
+const safeStringify = (value: unknown): string => {
+  try {
+    return JSON.stringify(value)
+  } catch (error) {
+    console.error('Failed to stringify interaction content', error)
+    return ''
+  }
 }
 
 const getToneIndex = (bundle: NormalizedBundle, agentId: string): number => {

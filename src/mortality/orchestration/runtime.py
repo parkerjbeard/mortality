@@ -38,6 +38,8 @@ class MortalityRuntime:
         self.shared_bus = shared_bus or SharedMCPBus()
         self._permission_handler_factory = permission_handler_factory or (lambda agent: AgentConsentPrompter(agent))
         self._peer_entry_digests: Dict[Tuple[str, str], str] = {}
+        # Track last known ms_left per agent to enable peer-timer snapshots
+        self._last_ms_left: Dict[str, int] = {}
 
     async def spawn_agent(
         self,
@@ -109,6 +111,8 @@ class MortalityRuntime:
                     "tick_ts": event.ts.isoformat(),
                 },
             )
+            # Update last-known ms_left for peer snapshots
+            self._last_ms_left[event.agent_id] = event.ms_left
             await handler(agent, event)
             if event.is_terminal:
                 self.telemetry.emit(
@@ -168,6 +172,15 @@ class MortalityRuntime:
         snapshot: Dict[str, list[Dict[str, Any]]] = {}
         for agent_id, agent in self._agents.items():
             snapshot[agent_id] = agent.state.memory.diary.serialize()
+        return snapshot
+
+    def peer_timer_snapshot(self, *, exclude_agent_id: str | None = None) -> Dict[str, int | None]:
+        """Return last-known ms_left for all agents (None if unknown)."""
+        snapshot: Dict[str, int | None] = {}
+        for agent_id in self._agents.keys():
+            if exclude_agent_id and agent_id == exclude_agent_id:
+                continue
+            snapshot[agent_id] = self._last_ms_left.get(agent_id)
         return snapshot
 
     async def _close_registered_clients(self) -> None:

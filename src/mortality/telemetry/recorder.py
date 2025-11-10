@@ -54,20 +54,27 @@ class StructuredTelemetrySink(TelemetrySink):
         config: Dict[str, Any],
         llm: Dict[str, Any],
         extra: Dict[str, Any] | None = None,
+        system_prompt: str | None = None,
     ) -> Dict[str, Any]:
-        return {
-            "bundle_type": "mortality/ui#events",
-            "schema_version": 1,
-            "exported_at": datetime.now(timezone.utc).isoformat(),
-            "experiment": experiment,
-            "config": config,
-            "llm": llm,
-            "agents": self.agent_profiles,
-            "metadata": metadata,
-            "diaries": diaries,
-            "events": [event.as_dict() for event in self._events],
-            "extra": extra or {},
-        }
+        ordered_items: List[tuple[str, Any]] = []
+        if system_prompt is not None:
+            ordered_items.append(("system_prompt", system_prompt))
+        ordered_items.extend(
+            [
+                ("bundle_type", "mortality/ui#events"),
+                ("schema_version", 1),
+                ("exported_at", datetime.now(timezone.utc).isoformat()),
+                ("experiment", experiment),
+                ("config", config),
+                ("llm", llm),
+                ("agents", self.agent_profiles),
+                ("metadata", metadata),
+                ("diaries", diaries),
+                ("events", [event.as_dict() for event in self._events]),
+                ("extra", extra or {}),
+            ]
+        )
+        return dict(ordered_items)
 
 
 __all__ = ["StructuredTelemetrySink", "TelemetryEvent"]

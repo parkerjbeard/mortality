@@ -1,11 +1,20 @@
 from __future__ import annotations
 
+import io
 import json
 import os
+import shutil
 import sys
 import threading
 from datetime import datetime
 from typing import Any, Dict, Iterable
+
+try:  # pragma: no cover - optional dependency import
+    from rich.console import Console
+    from rich.markdown import Markdown
+except Exception:  # pragma: no cover - rich not installed
+    Console = None  # type: ignore[assignment]
+    Markdown = None  # type: ignore[assignment]
 
 from .base import TelemetrySink
 
@@ -70,6 +79,35 @@ def _truncate(text: str, limit: int) -> str:
     return text
 
 
+def _normalize_message_content(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        parts = [
+            _normalize_message_content(part)
+            for part in value
+        ]
+        return "\n\n".join(part for part in parts if part)
+    if isinstance(value, dict):
+        text = value.get("text")
+        if isinstance(text, str):
+            return text
+        content = value.get("content")
+        nested = _normalize_message_content(content)
+        if nested:
+            return nested
+    return _safe_json(value)
+
+
+def _safe_json(value: Any) -> str:
+    try:
+        return json.dumps(value, ensure_ascii=False)
+    except Exception:
+        return str(value)
+
+
 class ConsoleTelemetrySink(TelemetrySink):
     """Pretty, colorized CLI logger for long-running experiments.
 
@@ -89,6 +127,8 @@ class ConsoleTelemetrySink(TelemetrySink):
         self._show_ticks = os.getenv("MORTALITY_CONSOLE_TICKS", "1") != "0"
         self._system_mode = os.getenv("MORTALITY_CONSOLE_SYSTEM", "once").lower()
         self._seen_system: set[str] = set()
+        self._code_theme = os.getenv("MORTALITY_CONSOLE_CODE_THEME", "monokai")
+        self._rich_enabled = Console is not None and Markdown is not None
 
     # Public API from TelemetrySink
     def emit(self, event: str, payload: dict | None = None) -> None:  # pragma: no cover - console output
@@ -142,11 +182,15 @@ class ConsoleTelemetrySink(TelemetrySink):
                 self._seen_system.add(key)
 
             arrow = "⇣" if direction == "inbound" else "⇡"
-            body = content
-            if isinstance(body, list):
-                body = json.dumps(body)
-            body = _truncate(str(body or ""), self._truncate)
-            line = f"{prefix}{arrow} {role}: {body}"
+            role_label = role or "message"
+            header = f"{prefix}{arrow} {role_label}:"
+            body_text = _normalize_message_content(content)
+            if body_text:
+                rendered = self._render_markdown(body_text, allow_truncate=True)
+                indented = self._indent_block(rendered)
+                line = f"{header}\n{indented}" if indented else header
+            else:
+                line = header
 
         elif event == "agent.tool_call":
             meta = data.get("tool_call") or {}
@@ -163,9 +207,10 @@ class ConsoleTelemetrySink(TelemetrySink):
 
         elif event == "agent.diary_entry":
             entry = (data.get("entry") or {}).get("text", "")
-            # Diary entries are important; never truncate.
             body = str(entry or "")
-            line = f"{prefix}✎ diary\n{body}"
+            rendered = self._render_markdown(body, allow_truncate=False)
+            indented = self._indent_block(rendered or body)
+            line = f"{prefix}✎ diary\n{indented}"
 
         elif event == "timer.expired":
             line = f"{prefix}✦ expired"
@@ -188,6 +233,46 @@ class ConsoleTelemetrySink(TelemetrySink):
             except Exception:
                 # Never let logging break the run
                 pass
+
+    def _render_markdown(self, text: str, *, allow_truncate: bool) -> str:
+        cleaned = text.strip("\n")
+        if not cleaned:
+            return ""
+        target = cleaned
+        if allow_truncate and self._truncate:
+            target = _truncate(cleaned, self._truncate)
+        if not self._rich_enabled or Console is None or Markdown is None:
+            return target
+        console = Console(
+            file=io.StringIO(),
+            force_terminal=True,
+            color_system="truecolor",
+            width=self._terminal_width(),
+            soft_wrap=True,
+            highlight=False,
+            markup=False,
+        )
+        try:
+            with console.capture() as capture:
+                console.print(Markdown(target, code_theme=self._code_theme))
+            rendered = capture.get().rstrip()
+            return rendered or target
+        except Exception:
+            # Never fail logging because rich formatting exploded
+            return target
+
+    def _indent_block(self, block: str) -> str:
+        if not block:
+            return ""
+        indent = "    "
+        return "\n".join(f"{indent}{line}" if line else indent for line in block.splitlines())
+
+    def _terminal_width(self) -> int:
+        try:
+            columns = shutil.get_terminal_size((100, 20)).columns
+        except OSError:
+            columns = 100
+        return max(columns, 60)
 
 
 class MultiTelemetrySink(TelemetrySink):
@@ -213,6 +298,7 @@ class MultiTelemetrySink(TelemetrySink):
         config: Dict[str, Any],
         llm: Dict[str, Any],
         extra: Dict[str, Any] | None = None,
+        system_prompt: str | None = None,
     ) -> Dict[str, Any]:
         for sink in self._sinks:
             build_bundle = getattr(sink, "build_bundle", None)
@@ -224,6 +310,7 @@ class MultiTelemetrySink(TelemetrySink):
                     config=config,
                     llm=llm,
                     extra=extra,
+                    system_prompt=system_prompt,
                 )
         raise AttributeError(
             "MultiTelemetrySink requires at least one sink that implements build_bundle"

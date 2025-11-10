@@ -4,7 +4,16 @@ import os
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence
 from uuid import uuid4
 
-from .base import LLMClient, LLMCompletion, LLMMessage, LLMProvider, LLMSession, LLMSessionConfig, ProviderUnavailable
+from .base import (
+    LLMClient,
+    LLMCompletion,
+    LLMMessage,
+    LLMProvider,
+    LLMSession,
+    LLMSessionConfig,
+    LLMToolCall,
+    ProviderUnavailable,
+)
 from .utils import to_anthropic_payload
 
 if TYPE_CHECKING:  # pragma: no cover - typing aid
@@ -70,7 +79,8 @@ class AnthropicMessagesClient(LLMClient):
         final_message = await self._client.messages.create(**payload)
         text = self._response_text(final_message)
         metadata = self._extract_metadata(final_message, session.config.model)
-        return LLMCompletion(text=text, metadata=metadata)
+        tool_calls = self._extract_tool_calls(final_message)
+        return LLMCompletion(text=text, metadata=metadata, tool_calls=tool_calls)
 
     def _response_text(self, message: Any) -> str:
         fragments: list[str] = []
@@ -103,6 +113,30 @@ class AnthropicMessagesClient(LLMClient):
             "model": getattr(message, "model", fallback_model),
             "usage": usage_payload,
         }
+
+    def _extract_tool_calls(self, message: Any) -> List[LLMToolCall]:
+        calls: List[LLMToolCall] = []
+        content = getattr(message, "content", None) or []
+        for block in content:
+            block_type = getattr(block, "type", None)
+            if block_type is None and isinstance(block, dict):
+                block_type = block.get("type")
+            if block_type != "tool_use":
+                continue
+            name = getattr(block, "name", None) or (block.get("name") if isinstance(block, dict) else None)
+            if not name:
+                continue
+            input_payload = getattr(block, "input", None)
+            if input_payload is None and isinstance(block, dict):
+                input_payload = block.get("input")
+            arguments = input_payload if isinstance(input_payload, dict) else {}
+            block_id = getattr(block, "id", None)
+            if block_id is None and isinstance(block, dict):
+                block_id = block.get("id")
+            calls.append(
+                LLMToolCall(name=name, arguments=dict(arguments), call_id=str(block_id) if block_id else None)
+            )
+        return calls
 
     def _convert_tools(self, tools: Sequence[Dict[str, object]]) -> List[Dict[str, object]]:
         """Normalize OpenAI-style tool definitions into Anthropic schema."""

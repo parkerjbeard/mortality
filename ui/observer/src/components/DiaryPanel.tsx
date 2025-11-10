@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { NormalizedBundle } from '@/lib/bundle'
 import { PlaybackControls } from '@/hooks/usePlayback'
 import { formatCountdown, formatTimestamp } from '@/lib/time'
+import { MarkdownContent } from './MarkdownContent'
 
 interface DiaryPanelProps {
   bundle: NormalizedBundle
@@ -64,9 +65,9 @@ export const DiaryPanel = ({
                     <span className="font-semibold text-slate-200">{name}</span>
                     <span>{formatTimestamp(entry.tsMs)}</span>
                   </div>
-                  <p className="mt-2 text-sm text-white whitespace-pre-wrap">
-                    {detail}
-                  </p>
+                  <div className="mt-2">
+                    <MarkdownContent content={detail} />
+                  </div>
                   <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-slate-500">
                     {entry.lifeIndex !== undefined && (
                       <span className="rounded-full bg-white/5 px-2 py-0.5">

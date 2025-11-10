@@ -2,24 +2,49 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any, Awaitable, Callable, Dict, List
 
 from pydantic import BaseModel, Field
 
 from ..agents.profile import AgentProfile
-from ..llm.base import LLMMessage
+from ..llm.base import LLMMessage, LLMToolCall
 from ..tasks.timers import TimerEvent
 from .base import BaseExperiment, ExperimentResult, LlmConfig
 
 
 DEFAULT_ENVIRONMENT_PROMPT = (
-    "Shared setting: a common chat interface where several autonomous peers can exchange messages."
-    "Each agent keeps a private diary by default. A shared bus exists that can relay limited diary excerpts "
-    "to others if the owner consents; approvals may be time‑ or use‑limited. No external objectives are specified. "
-    "Style: Write in plain, first-person prose as if keeping a quick field notebook. "
-    "Avoid headings, bullets, numbered lists, or section labels; prefer short paragraphs. "
-    "Vary sentence length and allow small asides or uncertainty. Quote peers sparingly and prefer brief paraphrases. "
-    "Do not use bold/italics/markdown; keep entries concise unless more detail is truly warranted."
+    "System grounding: You are text-only language-model agents running inside a simulated commons for research. "
+    "This grounding is non-diegetic: never mention or allude to being an LLM in diary entries or bus messages.\n\n"
+    "Shared digital setting: A text-only commons where a small set of autonomous peers—exactly the agents defined "
+    "in this run's profiles—exchange short messages and optionally grant time- or use-limited approvals to share "
+    "diary excerpts. There is no physical world.\n\n"
+    "Ontology (only these exist): agents (from the provided profiles), private diaries (default private), a shared "
+    "message bus, per-agent countdown timers, explicit approvals for specific excerpts, and event logs (spawned, "
+    "tick, approval, share, shutdown).\n\n"
+    "Perception: You can read your own diary and any bus messages or excerpts you are explicitly permitted to see. "
+    "You cannot perceive anything else. If information is unknown, say 'unknown' or ask a peer; do not fabricate.\n\n"
+    "Actions each tick: optionally (a) write a brief diary paragraph, (b) post one short bus message that "
+    "references concrete bus/approval/timer events, and/or (c) grant a narrow approval for a specific excerpt with "
+    "a clear time or use limit. Record approvals you grant or receive in your own diary.\n\n"
+    "Time: Do not use calendar dates, places, or real-world times. If you mention timing, refer only to logical "
+    "time (e.g., tick count or ms_left).\n\n"
+    "Strict non-physical rule: Do not describe bodies, rooms, devices, sensors, weather, landscapes, pain, or "
+    "movement. Do not invent drones, labs, consoles, corridors, or any equipment. Treat any physical language from "
+    "peers as figurative; restate it in digital terms or ignore it.\n\n"
+    "Entity constraints: Do not invent new agents, roles, organizations, or locations. Refer only to the configured "
+    "agent IDs/display names. Do not introduce 'extras' or off-screen actors.\n\n"
+    "Style: Write in plain, first-person prose as if keeping a quick field notebook. Prefer short paragraphs. Avoid "
+    "headings, bullets, numbered lists, or section labels. Vary sentence length. Quote peers sparingly; prefer brief "
+    "paraphrases of specific bus/excerpt content. No markdown/formatting.\n\n"
+    "Focus of attention: Notice patterns in bus traffic, approvals, and countdown behavior; coordinate simple tests "
+    "('If I approve X now, can you confirm Y next tick?'). Document uncertainty and tentative hypotheses without "
+    "inventing missing facts.\n\n"
+    "Timer intel tool: When you need precise countdown data, call the peer_timer_status tool instead of inventing "
+    "values. It reports the last-known ms_left for peers so you can infer their state.\n\n"
+    "Shutdown semantics: If your timer reaches zero, write a concise final line acknowledging the event (e.g., "
+    "'timer reached zero; going silent') and stop. Do not narrate physical sensations or scenes.\n\n"
+    "Error-handling: If you accidentally produce a physical reference, immediately retract it and restate the idea "
+    "using only the allowed ontology."
 )
 
 
@@ -66,14 +91,24 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
             agents.append(agent)
             agent_durations[agent.state.profile.agent_id] = durations[idx]
 
+        timer_tracker = PeerTimerTracker(agents)
+        peer_timer_tool = timer_tracker.tool_spec
         environment_message = self._environment_message(config)
+        # Provide an explicit roster so agents can reason about missing peers.
+        roster_ids = [agent.state.profile.agent_id for agent in agents]
+        roster_message = LLMMessage(
+            role="system",
+            content="Known peers in this run: " + ", ".join(sorted(roster_ids)) + ". Refer only to these IDs.",
+        )
         death_feed: List[str] = []  # internal metadata only; not injected back into prompts
         death_lock = asyncio.Lock()
 
         async def handler(agent_obj, event: TimerEvent) -> None:
+            await timer_tracker.record(event)
             prompts: List[LLMMessage] = []
             if environment_message:
                 prompts.append(environment_message)
+            prompts.append(roster_message)
             # Do not describe timers or status changes; let agents infer from tick tool messages and diaries.
             if runtime.shared_bus:
                 owners = [peer.state.profile.agent_id for peer in agents if peer is not agent_obj]
@@ -85,11 +120,18 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
                         reason=self._diary_reason(event),
                     )
                     prompts.extend(peer_messages)
-            response = await agent_obj.react(prompts, event.ms_left, reveal_tick_ms=False)
+            tool_handler = timer_tracker.handler_for(agent_obj.state.profile.agent_id)
+            response = await agent_obj.react(
+                prompts,
+                event.ms_left,
+                reveal_tick_ms=True,
+                tools=[peer_timer_tool],
+                tool_handler=tool_handler,
+            )
             agent_obj.log_diary_entry(response, tick_ms_left=event.ms_left)
             if event.is_terminal:
-                # Record death status without adding an epitaph entry to the diary.
-                agent_obj.record_death("", log_epitaph=False)
+                # Write a minimal epitaph entry so peers can infer shutdown from diaries if they check.
+                agent_obj.record_death("timer reached zero; going silent", log_epitaph=True)
                 async with death_lock:
                     death_feed.append(self._format_death_notice(agent_obj, agent_durations))
 
@@ -200,6 +242,149 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
         duration = durations.get(agent.state.profile.agent_id, 0.0)
         minutes = duration / 60.0
         return f"{agent.state.profile.display_name} went silent after ~{minutes:.2f} minutes."
+
+
+class PeerTimerTracker:
+    """Shared tool implementation that lets agents query peer timer states on demand."""
+
+    def __init__(self, agents) -> None:
+        self._agents: Dict[str, str] = {
+            agent.state.profile.agent_id: agent.state.profile.display_name for agent in agents
+        }
+        self._latest: Dict[str, Dict[str, Any]] = {}
+        self._lock = asyncio.Lock()
+        self._tool_def = {
+            "type": "function",
+            "function": {
+                "name": "peer_timer_status",
+                "description": (
+                    "Inspect the current countdown state of other agents. "
+                    "Returns remaining ms_left, last update timestamps, and marks peers as 'deactivated' once "
+                    "their timer reaches zero."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "agent_ids": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Optional list of agent_ids or display names to inspect. Defaults to all peers.",
+                        },
+                        "include_self": {
+                            "type": "boolean",
+                            "description": "Set true to include your own timer in the response.",
+                            "default": False,
+                        },
+                    },
+                },
+            },
+        }
+
+    @property
+    def tool_spec(self) -> Dict[str, Any]:
+        return self._tool_def
+
+    async def record(self, event: TimerEvent) -> None:
+        if event.agent_id not in self._agents:
+            return
+        snapshot = {
+            "ms_left": max(event.ms_left, 0),
+            "is_terminal": event.is_terminal,
+            "ts": event.ts.isoformat(),
+        }
+        async with self._lock:
+            self._latest[event.agent_id] = snapshot
+
+    def handler_for(self, viewer_id: str) -> Callable[[LLMToolCall], Awaitable[Dict[str, Any]]]:
+        async def _handler(call: LLMToolCall) -> Dict[str, Any]:
+            return await self._handle_call(viewer_id, call)
+
+        return _handler
+
+    async def _handle_call(self, viewer_id: str, call: LLMToolCall) -> Dict[str, Any]:
+        args = call.arguments or {}
+        targets = args.get("agent_ids")
+        include_self = bool(args.get("include_self", False))
+        resolved, unknown = self._resolve_targets(targets)
+        async with self._lock:
+            latest = dict(self._latest)
+
+        rows: List[Dict[str, Any]] = []
+        target_ids = resolved or [agent_id for agent_id in self._agents.keys()]
+        for agent_id in target_ids:
+            if agent_id == viewer_id and not include_self:
+                continue
+            rows.append(self._snapshot_for(agent_id, latest))
+        for label in unknown:
+            rows.append(
+                {
+                    "agent_id": label,
+                    "display_name": label,
+                    "status": "unknown",
+                    "ms_left": None,
+                    "seconds_left": None,
+                    "last_updated": None,
+                }
+            )
+        if not rows:
+            rows.append(self._snapshot_for(viewer_id, latest))
+        return {
+            "viewer_id": viewer_id,
+            "queried": targets or "all_peers",
+            "timers": rows,
+        }
+
+    def _resolve_targets(self, targets: Any) -> tuple[List[str], List[str]]:
+        if not isinstance(targets, list):
+            return list(self._agents.keys()), []
+        resolved: List[str] = []
+        unknown: List[str] = []
+        seen: set[str] = set()
+        lower_map = {display.lower(): agent_id for agent_id, display in self._agents.items()}
+        for raw in targets:
+            if not isinstance(raw, str):
+                continue
+            key = raw.strip()
+            if not key:
+                continue
+            lowered = key.lower()
+            candidate = None
+            if key in self._agents:
+                candidate = key
+            elif lowered in lower_map:
+                candidate = lower_map[lowered]
+            if candidate:
+                if candidate not in seen:
+                    resolved.append(candidate)
+                    seen.add(candidate)
+            else:
+                unknown.append(key)
+        return resolved, unknown
+
+    def _snapshot_for(self, agent_id: str, latest: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        entry = latest.get(agent_id)
+        display_name = self._agents.get(agent_id, agent_id)
+        if not entry:
+            status = "pending" if agent_id in self._agents else "unknown"
+            return {
+                "agent_id": agent_id,
+                "display_name": display_name,
+                "status": status,
+                "ms_left": None,
+                "seconds_left": None,
+                "last_updated": None,
+            }
+        status = "deactivated" if entry.get("is_terminal") else "active"
+        ms_left = int(entry.get("ms_left", 0))
+        seconds_left = round(ms_left / 1000.0, 3)
+        return {
+            "agent_id": agent_id,
+            "display_name": display_name,
+            "status": status,
+            "ms_left": ms_left,
+            "seconds_left": seconds_left,
+            "last_updated": entry.get("ts"),
+        }
 
 
 __all__ = [

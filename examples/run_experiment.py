@@ -78,6 +78,7 @@ def _build_ui_export(
     llm: dict,
     cli_args: dict,
 ) -> dict:
+    system_prompt = _extract_system_prompt(config)
     bundle = telemetry.build_bundle(
         diaries=diaries,
         metadata=metadata,
@@ -85,6 +86,7 @@ def _build_ui_export(
         config=config,
         llm=llm,
         extra={"cli_args": cli_args},
+        system_prompt=system_prompt,
     )
     return bundle
 
@@ -101,3 +103,11 @@ def _stringify_cli_args(args: argparse.Namespace) -> dict[str, Any]:
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+def _extract_system_prompt(config: dict) -> str | None:
+    for attr in ("system_prompt", "environment_prompt"):
+        value = config.get(attr)
+        if isinstance(value, str) and value.strip():
+            return value
+    return None

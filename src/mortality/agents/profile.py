@@ -27,15 +27,15 @@ class AgentProfile(BaseModel):
         if traits_text:
             prompt += f"Traits: {traits_text}.\n"
 
-        # Stylistic guidance: encourage natural, non-templated writing.
+        # Stylistic and ontological guidance aligned with the environment prompt.
         prompt += (
+            "Perception: You interact only with text (your diary, the shared bus, and explicitly approved excerpts). "
+            "You have no sensors, body, or surroundings. If information is unknown, say 'unknown' or ask a peer.\n"
+            "Non-physical rule: Do not describe places, objects, weather, movement, pain, or devices.\n"
+            "Time: Do not use calendar dates or real-world time; refer only to logical time (tick count or ms_left) if relevant.\n"
+            "Meta: Do not mention being an AI/LLM in your outputs.\n"
             "Style: Write in plain, first-person prose as if keeping a quick field notebook. "
             "Avoid headings, bullets, numbered lists, or section labels; prefer short paragraphs. "
-            "Vary sentence length and allow small asides or uncertainty. "
-            "Quote peers sparingly and prefer brief paraphrases. "
-            "Do not use bold/italics/markdown; keep entries concise unless more detail is truly warranted. "
-            "Begin every diary entry with the shared universal clock timestamp (UTC) that all agents reference, "
-            "for example 2039-07-04 15:02 UTC – before the rest of the note."
         )
         return prompt
 

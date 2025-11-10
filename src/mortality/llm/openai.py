@@ -6,8 +6,17 @@ from uuid import uuid4
 
 import httpx
 
-from .base import LLMClient, LLMCompletion, LLMMessage, LLMProvider, LLMSession, LLMSessionConfig, ProviderUnavailable
-from .utils import to_responses_input
+from .base import (
+    LLMClient,
+    LLMCompletion,
+    LLMMessage,
+    LLMProvider,
+    LLMSession,
+    LLMSessionConfig,
+    LLMToolCall,
+    ProviderUnavailable,
+)
+from .utils import parse_tool_arguments, to_responses_input
 
 
 class OpenAIChatClient(LLMClient):
@@ -82,7 +91,56 @@ class OpenAIChatClient(LLMClient):
             "response_id": body.get("id"),
             "status": body.get("status"),
         }
-        return LLMCompletion(text=content or "", metadata=metadata)
+        tool_calls = self._extract_tool_calls(body)
+        return LLMCompletion(text=content or "", metadata=metadata, tool_calls=tool_calls)
+
+    def _extract_tool_calls(self, body: Dict[str, Any]) -> List[LLMToolCall]:
+        calls: List[LLMToolCall] = []
+        output_items = body.get("output") or []
+        if isinstance(output_items, list):
+            for item in output_items:
+                call = self._normalize_tool_call(item)
+                if call:
+                    calls.append(call)
+        for item in body.get("tool_calls") or []:
+            call = self._normalize_tool_call(item)
+            if call:
+                calls.append(call)
+        return calls
+
+    def _normalize_tool_call(self, item: Any) -> LLMToolCall | None:
+        if not isinstance(item, dict):
+            return None
+        kind = item.get("type")
+        if kind not in {"tool_call", "function_call"}:
+            content = item.get("content")
+            if isinstance(content, list):
+                for block in content:
+                    call = self._normalize_tool_call(block)
+                    if call:
+                        return call
+            return None
+        function = item.get("function")
+        if isinstance(function, dict):
+            name = function.get("name")
+            args_raw = function.get("arguments")
+        else:
+            name = item.get("name") or item.get("tool_name")
+            args_raw = item.get("arguments") or item.get("input")
+        if not name:
+            return None
+        arguments = parse_tool_arguments(args_raw)
+        return LLMToolCall(name=name, arguments=arguments, call_id=self._tool_call_id(item, function))
+
+    def _tool_call_id(self, item: Any, function: Any) -> str | None:
+        for payload in (item, function):
+            if not isinstance(payload, dict):
+                continue
+            for key in ("id", "tool_call_id", "call_id"):
+                value = payload.get(key)
+                if value:
+                    return str(value)
+        return None
 
 
 def _extract_text_from_output(body: Dict[str, Any]) -> str:

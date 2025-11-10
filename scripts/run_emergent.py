@@ -33,6 +33,7 @@ def main() -> None:
         raise SystemExit("OPENROUTER_API_KEY must be set in environment")
 
     outcome = anyio.run(_run_emergent)
+    system_prompt = _extract_system_prompt(outcome.config)
     bundle = outcome.telemetry.build_bundle(
         diaries=outcome.diaries,
         metadata=outcome.metadata,
@@ -40,6 +41,7 @@ def main() -> None:
         config=outcome.config.model_dump(),
         llm=outcome.config.llm.model_dump(),
         extra={"status": outcome.status},
+        system_prompt=system_prompt,
     )
 
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -118,6 +120,14 @@ async def _run_emergent() -> RunOutcome:
         metadata=metadata,
         status=status,
     )
+
+
+def _extract_system_prompt(config: Any) -> str | None:
+    for attr in ("system_prompt", "environment_prompt"):
+        value = getattr(config, attr, None)
+        if isinstance(value, str) and value.strip():
+            return value
+    return None
 
 
 def _snapshot_interrupted(runtime: MortalityRuntime, reason: str) -> tuple[Dict[str, list[Dict[str, Any]]], Dict[str, Any]]:

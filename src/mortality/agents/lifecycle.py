@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Literal, Sequence
+import json
+from typing import Any, Awaitable, Callable, Dict, List, Literal, Sequence
 
-from ..llm.base import LLMClient, LLMMessage, LLMSessionConfig, make_tick_tool_message
+from ..llm.base import LLMClient, LLMMessage, LLMSessionConfig, LLMToolCall, make_tick_tool_message
 from ..telemetry.base import NullTelemetrySink, TelemetrySink
 from ..mcp.bus import SharedMCPBus
 from .memory import AgentMemory, DiaryEntry
 from .profile import AgentProfile
 from .state import AgentState, LifecycleStatus
+
+
+ToolHandler = Callable[[LLMToolCall], Awaitable[Any]]
 
 
 class MortalityAgent:
@@ -47,32 +51,68 @@ class MortalityAgent:
         tick_ms_left: int,
         reveal_tick_ms: bool = True,
         cause: str = "countdown",
+        tools: Sequence[Dict[str, Any]] | None = None,
+        tool_handler: ToolHandler | None = None,
+        max_tool_iterations: int = 4,
     ) -> str:
         if self.state.status == LifecycleStatus.EXPIRED:
             raise RuntimeError(f"Agent {self.state.profile.agent_id} is already dead")
         async with self._io_lock:
             payload_ms = tick_ms_left if reveal_tick_ms else None
             tick = make_tick_tool_message(payload_ms, cause=cause)
-            payload = [tick, *messages]
-            for message in payload:
-                self._emit_message_event("inbound", message, tick_ms_left=tick_ms_left, cause=cause)
-            completion = await self._client.complete_response(self.state.session, payload)
-            transcript = completion.text
-            if completion.metadata:
-                session_attrs = self.state.session.attributes
-                metadata_log = session_attrs.setdefault("last_completion_metadata", {})
-                metadata_log.update(completion.metadata)
-                routed_model = completion.metadata.get("model")
-                if routed_model:
-                    history = session_attrs.setdefault("routed_models", [])
-                    if routed_model not in history:
-                        history.append(routed_model)
-                    session_attrs["last_routed_model"] = routed_model
-            for message in payload:
-                self.state.session.append(message)
-            assistant_message = LLMMessage(role="assistant", content=transcript)
-            self.state.session.append(assistant_message)
-            self._emit_message_event("outbound", assistant_message, tick_ms_left=tick_ms_left, cause=cause)
+            pending_batch: List[LLMMessage] = [tick, *messages]
+            transcript = ""
+            iterations = 0
+
+            while True:
+                iterations += 1
+                batch = list(pending_batch)
+                for message in batch:
+                    self._emit_message_event("inbound", message, tick_ms_left=tick_ms_left, cause=cause)
+                completion = await self._client.complete_response(self.state.session, batch, tools=tools)
+                transcript = completion.text
+                if completion.metadata:
+                    session_attrs = self.state.session.attributes
+                    metadata_log = session_attrs.setdefault("last_completion_metadata", {})
+                    metadata_log.update(completion.metadata)
+                    routed_model = completion.metadata.get("model")
+                    if routed_model:
+                        history = session_attrs.setdefault("routed_models", [])
+                        if routed_model not in history:
+                            history.append(routed_model)
+                        session_attrs["last_routed_model"] = routed_model
+                for message in batch:
+                    self.state.session.append(message)
+
+                assistant_metadata = dict(completion.metadata)
+                if completion.tool_calls:
+                    assistant_metadata["tool_calls"] = [call.model_dump() for call in completion.tool_calls]
+                assistant_message = (
+                    LLMMessage(role="assistant", content=transcript, metadata=assistant_metadata)
+                    if assistant_metadata
+                    else LLMMessage(role="assistant", content=transcript)
+                )
+                self.state.session.append(assistant_message)
+                self._emit_message_event("outbound", assistant_message, tick_ms_left=tick_ms_left, cause=cause)
+
+                if (
+                    not completion.tool_calls
+                    or not tools
+                    or not tool_handler
+                    or iterations >= max_tool_iterations
+                ):
+                    break
+
+                tool_messages = await self._execute_tool_calls(
+                    completion.tool_calls,
+                    tool_handler,
+                    tick_ms_left=tick_ms_left,
+                    cause=cause,
+                )
+                if not tool_messages:
+                    break
+                pending_batch = tool_messages
+
             self.state.last_tick_ms = tick_ms_left
             return transcript
 
@@ -140,5 +180,58 @@ class MortalityAgent:
                 "message": message.as_dict(),
             },
         )
+
+    async def _execute_tool_calls(
+        self,
+        tool_calls: Sequence[LLMToolCall],
+        handler: ToolHandler,
+        *,
+        tick_ms_left: int,
+        cause: str,
+    ) -> List[LLMMessage]:
+        """Execute requested tools and return tool response messages."""
+
+        results: List[LLMMessage] = []
+        for call in tool_calls:
+            self._telemetry.emit(
+                "agent.tool_call",
+                {
+                    "agent_id": self.state.profile.agent_id,
+                    "tool_call": call.model_dump(),
+                    "tick_ms_left": tick_ms_left,
+                    "cause": cause,
+                },
+            )
+            try:
+                payload = await handler(call)
+            except Exception as exc:  # pragma: no cover - defensive guard
+                payload = {"error": str(exc)}
+            content = self._serialize_tool_payload(payload)
+            metadata = {"tool_call_id": call.call_id} if call.call_id else None
+            message = (
+                LLMMessage(role="tool", name=call.name, content=content, metadata=metadata)
+                if metadata
+                else LLMMessage(role="tool", name=call.name, content=content)
+            )
+            results.append(message)
+            self._telemetry.emit(
+                "agent.tool_result",
+                {
+                    "agent_id": self.state.profile.agent_id,
+                    "tool_call": call.model_dump(),
+                    "content": content,
+                    "tick_ms_left": tick_ms_left,
+                    "cause": cause,
+                },
+            )
+        return results
+
+    def _serialize_tool_payload(self, payload: Any) -> str:
+        if isinstance(payload, str):
+            return payload
+        try:
+            return json.dumps(payload, ensure_ascii=False)
+        except TypeError:
+            return json.dumps({"result": str(payload)}, ensure_ascii=False)
 
 __all__ = ["MortalityAgent"]

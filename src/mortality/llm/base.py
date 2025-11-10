@@ -45,6 +45,7 @@ class LLMMessage(BaseModel):
 class LLMToolCall(BaseModel):
     name: str
     arguments: Dict[str, Any]
+    call_id: Optional[str] = None
     ts: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -54,6 +55,7 @@ class LLMCompletion:
 
     text: str
     metadata: Dict[str, Any] = field(default_factory=dict)
+    tool_calls: List[LLMToolCall] = field(default_factory=list)
 
 
 class LLMSessionConfig(BaseModel):

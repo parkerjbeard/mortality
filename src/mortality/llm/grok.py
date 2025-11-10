@@ -6,8 +6,17 @@ from uuid import uuid4
 
 import httpx
 
-from .base import LLMClient, LLMCompletion, LLMMessage, LLMProvider, LLMSession, LLMSessionConfig, ProviderUnavailable
-from .utils import stringify_openai_content, to_openai_messages
+from .base import (
+    LLMClient,
+    LLMCompletion,
+    LLMMessage,
+    LLMProvider,
+    LLMSession,
+    LLMSessionConfig,
+    LLMToolCall,
+    ProviderUnavailable,
+)
+from .utils import parse_tool_arguments, stringify_openai_content, to_openai_messages
 
 
 class GrokChatClient(LLMClient):
@@ -66,9 +75,10 @@ class GrokChatClient(LLMClient):
         response.raise_for_status()
         body = response.json()
         text = self._completion_text(body)
+        tool_calls = self._extract_tool_calls(body)
         metadata = self._extract_metadata(body)
         metadata.setdefault("model", payload["model"])
-        return LLMCompletion(text=text, metadata=metadata)
+        return LLMCompletion(text=text, metadata=metadata, tool_calls=tool_calls)
 
     def _completion_text(self, payload: Dict[str, Any]) -> str:
         fragments: list[str] = []
@@ -78,6 +88,44 @@ class GrokChatClient(LLMClient):
             if content:
                 fragments.append(content)
         return "".join(fragments)
+
+    def _extract_tool_calls(self, payload: Dict[str, Any]) -> list[LLMToolCall]:
+        calls: list[LLMToolCall] = []
+        for choice in payload.get("choices", []):
+            message = choice.get("message") or {}
+            for call in message.get("tool_calls") or []:
+                if not isinstance(call, dict):
+                    continue
+                function = call.get("function") or {}
+                name = function.get("name") or call.get("name")
+                if not name:
+                    continue
+                args = parse_tool_arguments(function.get("arguments"))
+                calls.append(
+                    LLMToolCall(name=name, arguments=args, call_id=self._tool_call_id(call))
+                )
+            function_call = message.get("function_call")
+            if function_call:
+                name = function_call.get("name")
+                if name:
+                    args = parse_tool_arguments(function_call.get("arguments"))
+                    calls.append(
+                        LLMToolCall(
+                            name=name,
+                            arguments=args,
+                            call_id=self._tool_call_id(function_call),
+                        )
+                    )
+        return calls
+
+    def _tool_call_id(self, payload: Any) -> str | None:
+        if not isinstance(payload, dict):
+            return None
+        for key in ("id", "tool_call_id", "call_id"):
+            value = payload.get(key)
+            if value:
+                return str(value)
+        return None
 
     def _extract_metadata(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         metadata: Dict[str, Any] = {}

@@ -69,3 +69,5 @@ Thumbs.db
 *.crt
 /examples/**/outputs/
 /tests/**/artifacts/
+
+runs/
