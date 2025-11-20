@@ -240,6 +240,24 @@ class MortalityAgent:
                 },
             )
 
+    def inject_system_message(
+        self,
+        content: str,
+        *,
+        cause: str = "system.notice",
+        metadata: Dict[str, Any] | None = None,
+    ) -> None:
+        """Append a system message to the session and emit telemetry."""
+
+        message = LLMMessage(role="system", content=content, metadata=metadata or {})
+        self.state.session.append(message)
+        self._emit_message_event(
+            "inbound",
+            message,
+            tick_ms_left=self.state.last_tick_ms or 0,
+            cause=cause,
+        )
+
     async def record_death(self, epitaph: str = "", *, log_epitaph: bool = True) -> None:
         if log_epitaph:
             await self.log_diary_entry(

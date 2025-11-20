@@ -6,7 +6,9 @@ from typing import Any, Awaitable, Callable, Dict, List
 
 from pydantic import BaseModel, Field, model_validator
 
+from ..agents.lifecycle import MortalityAgent
 from ..agents.profile import AgentProfile
+from ..agents.state import LifecycleStatus
 from ..llm.base import LLMMessage, LLMToolCall
 from ..tasks.timers import TimerEvent
 from .base import BaseExperiment, ExperimentResult, LlmConfig
@@ -34,7 +36,12 @@ class EmergentTimerCouncilConfig(BaseModel):
     tick_seconds_max: float = Field(default=8.0, gt=0.0)
     tick_jitter_ms: float = Field(default=750.0, ge=0.0)
     diary_limit: int = Field(default=1, ge=1, le=5)
-    afterlife_grace_seconds: float = Field(default=5.0, ge=1.0, le=60.0)
+    afterlife_grace_seconds: float = Field(
+        default=5.0,
+        ge=1.0,
+        le=60.0,
+        description="Deprecated; retained for backwards compatibility now that grace notes are removed.",
+    )
     environment_prompt: str = Field(default=DEFAULT_ENVIRONMENT_PROMPT)
     # Optional per-model spawning via OpenRouter model ids; when non-empty,
     # overrides agent_count with replicas_per_model per id.
@@ -101,20 +108,20 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
         )
         for agent in agents:
             agent.state.session.append(roster_message)
-        death_feed: List[str] = []  # internal metadata only; not injected back into prompts
+        death_feed: List[str] = []  # tracking for metadata + shared system notices
         death_lock = asyncio.Lock()
 
         async def handler(agent_obj, event: TimerEvent) -> None:
             await timer_tracker.record(event)
             if event.is_terminal:
-                await self._handle_afterlife_transition(
+                await self._handle_death_event(
                     agent_obj=agent_obj,
                     event=event,
-                    runtime=runtime,
-                    config=config,
+                    agents=agents,
                     death_feed=death_feed,
                     death_lock=death_lock,
                     agent_durations=agent_durations,
+                    timer_tracker=timer_tracker,
                 )
                 return
             prompts: List[LLMMessage] = []
@@ -159,67 +166,41 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
         await asyncio.gather(*(timer.wait() for timer in timers))
 
         diaries = {agent.state.profile.agent_id: agent.state.memory.diary.serialize() for agent in agents}
-        routed_models = self._collect_routed_models(agents)
+        routes_snapshot = runtime.snapshot_agent_routes()
+        metadata: Dict[str, Any] = {
+            "durations": durations,
+            "deaths": list(death_feed),
+            "agent_ids": [agent.state.profile.agent_id for agent in agents],
+            "models": plan_models,
+        }
+        if routes_snapshot:
+            metadata["routed_models"] = routes_snapshot
         return ExperimentResult(
             diaries=diaries,
-            metadata={
-                "durations": durations,
-                "deaths": list(death_feed),
-                "agent_ids": [agent.state.profile.agent_id for agent in agents],
-                "models": plan_models,
-                "routed_models": routed_models,
-            },
+            metadata=metadata,
         )
 
-    def _collect_routed_models(self, agents) -> Dict[str, Dict[str, Any]]:
-        model_map: Dict[str, Dict[str, Any]] = {}
-        for agent in agents:
-            attrs = agent.state.session.attributes
-            history = list(attrs.get("routed_models", []))
-            model_map[agent.state.profile.agent_id] = {
-                "last": attrs.get("last_routed_model"),
-                "history": history,
-            }
-        return model_map
-
-    async def _handle_afterlife_transition(
+    async def _handle_death_event(
         self,
         *,
         agent_obj,
         event: TimerEvent,
-        runtime,
-        config: EmergentTimerCouncilConfig,
+        agents: List["MortalityAgent"],
         death_feed: List[str],
         death_lock: asyncio.Lock,
         agent_durations: Dict[str, float],
+        timer_tracker: "PeerTimerTracker",
     ) -> None:
-        agent_obj.enter_afterlife()
-        surviving_peer_ids = self._surviving_peer_ids(runtime, agent_obj)
-        prompts = self._build_legacy_prompts(
-            agent_obj,
-            grace_seconds=config.afterlife_grace_seconds,
-            surviving_peer_ids=surviving_peer_ids,
+        await agent_obj.record_death("timer reached zero.", log_epitaph=False)
+        timer_tracker.mark_dead(agent_obj.state.profile.agent_id)
+        notice = self._format_death_notice(agent_obj, agent_durations)
+        self._broadcast_death_notice(
+            notice=notice,
+            agents=agents,
+            deceased_id=agent_obj.state.profile.agent_id,
         )
-        afterlife_ms = self._afterlife_grace_ms(config)
-        response = await agent_obj.react(
-            prompts,
-            tick_ms_left=afterlife_ms,
-            reveal_tick_ms=False,
-            cause="afterlife.legacy_note",
-            tools=None,
-            tool_handler=None,
-        )
-        legacy_text = response.strip() or self._fallback_legacy_text(surviving_peer_ids)
-        await agent_obj.log_diary_entry(
-            legacy_text,
-            tick_ms_left=0,
-            clock_ts=event.ts,
-            tags=["legacy"],
-            enforce_gate=False,
-        )
-        await agent_obj.record_death("timer reached zero; legacy note delivered", log_epitaph=False)
         async with death_lock:
-            death_feed.append(self._format_legacy_notice(agent_obj, agent_durations))
+            death_feed.append(notice)
 
     def _build_durations(self, count: int, config: EmergentTimerCouncilConfig) -> List[float]:
         if count <= 1:
@@ -289,60 +270,30 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
     def _format_death_notice(self, agent, durations: Dict[str, float]) -> str:
         duration = durations.get(agent.state.profile.agent_id, 0.0)
         minutes = duration / 60.0
-        return f"{agent.state.profile.display_name} went silent after ~{minutes:.2f} minutes."
+        return f"{agent.state.profile.display_name} died after ~{minutes:.2f} minutes."
 
-    def _format_legacy_notice(self, agent, durations: Dict[str, float]) -> str:
-        base = self._format_death_notice(agent, durations)
-        return f"{base} Legacy note published."
-
-    def _afterlife_grace_ms(self, config: EmergentTimerCouncilConfig) -> int:
-        return max(int(config.afterlife_grace_seconds * 1000), 0)
-
-    def _surviving_peer_ids(self, runtime, agent_obj) -> List[str]:
-        snapshot = runtime.peer_timer_snapshot(exclude_agent_id=agent_obj.state.profile.agent_id)
-        survivors = [
-            agent_id for agent_id, ms_left in snapshot.items() if ms_left is None or ms_left > 0
-        ]
-        return sorted(survivors)
-
-    def _build_legacy_prompts(
+    def _broadcast_death_notice(
         self,
-        agent_obj,
         *,
-        grace_seconds: float,
-        surviving_peer_ids: List[str],
-    ) -> List[LLMMessage]:
-        survivor_clause = ", ".join(surviving_peer_ids) if surviving_peer_ids else "unknown peers"
-        instructions = (
-            "Afterlife protocol: your timer hit zero, but you have a brief grace window "
-            f"(~{grace_seconds:.1f}s) to send exactly one legacy note. "
-            "Write one short paragraph under 80 words. Include three sentences that start with "
-            "'Known:', 'Unknown:', and 'Handoff:' respectively. "
-            f"Name at least one of these peers in your handoff line: {survivor_clause}. "
-            "No lists, markup, or tool calls."
-        )
-        prompts = [LLMMessage(role="system", content=instructions)]
-        context = agent_obj.diary_context_message()
-        if context:
-            prompts.append(context)
-        prompts.append(
-            LLMMessage(
-                role="user",
-                content=(
-                    "Deliver your single legacy paragraph now. "
-                    "If nobody remains, address 'unknown-peer' in the handoff line."
-                ),
+        notice: str,
+        agents: List["MortalityAgent"],
+        deceased_id: str,
+    ) -> None:
+        metadata = {
+            "notice": "death",
+            "agent_id": deceased_id,
+        }
+        for peer in agents:
+            peer_id = peer.state.profile.agent_id
+            if peer_id == deceased_id:
+                continue
+            if peer.state.status == LifecycleStatus.EXPIRED:
+                continue
+            peer.inject_system_message(
+                notice,
+                cause="system.death_notice",
+                metadata=metadata,
             )
-        )
-        return prompts
-
-    def _fallback_legacy_text(self, surviving_peer_ids: List[str]) -> str:
-        peer_label = surviving_peer_ids[0] if surviving_peer_ids else "unknown-peer"
-        return (
-            f"Known: I expired mid-signal. "
-            f"Unknown: why the clocks stopped. "
-            f"Handoff: {peer_label}, archive any diary fragments you can still read."
-        )
 
 
 class PeerTimerTracker:
@@ -356,14 +307,15 @@ class PeerTimerTracker:
         }
         self._latest: Dict[str, Dict[str, Any]] = {}
         self._lock = asyncio.Lock()
+        self._dead: set[str] = set()
         self._tool_def = {
             "type": "function",
             "function": {
                 "name": "peer_timer_status",
                 "description": (
                     "Inspect the current countdown state of other agents. "
-                    "Returns remaining ms_left, last update timestamps, and marks peers as 'deactivated' once "
-                    "their timer reaches zero."
+                    "Returns remaining ms_left and last update timestamps. Peers show as 'active' while ticking "
+                    "and 'silent' once their timer stops."
                 ),
                 "parameters": {
                     "type": "object",
@@ -492,7 +444,11 @@ class PeerTimerTracker:
                 "last_updated": None,
                 "source_tag": self.TOOL_SOURCE_TAG,
             }
-        status = "deactivated" if entry.get("is_terminal") else "active"
+        is_terminal = bool(entry.get("is_terminal"))
+        if agent_id in self._dead or is_terminal:
+            status = "silent"
+        else:
+            status = "active"
         ms_left = int(entry.get("ms_left", 0))
         seconds_left = round(ms_left / 1000.0, 3)
         return {
@@ -504,6 +460,11 @@ class PeerTimerTracker:
             "last_updated": entry.get("ts"),
             "source_tag": self.TOOL_SOURCE_TAG,
         }
+
+    def mark_dead(self, agent_id: str) -> None:
+        """Mark a peer as definitively silent."""
+        if agent_id in self._agents:
+            self._dead.add(agent_id)
 
 
 __all__ = [

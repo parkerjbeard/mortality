@@ -118,7 +118,8 @@ async def _run_emergent() -> RunOutcome:
 
     metadata.setdefault("status", status)
     metadata.setdefault("agent_ids", sorted(diaries.keys()))
-    _merge_routed_models(metadata, routes_snapshot)
+    if routes_snapshot:
+        metadata.setdefault("routed_models", routes_snapshot)
 
     return RunOutcome(
         telemetry=telemetry,
@@ -164,65 +165,6 @@ def _snapshot_interrupted(runtime: MortalityRuntime, reason: str) -> tuple[Dict[
     if routes:
         metadata["routed_models"] = routes
     return diaries, metadata
-
-
-def _merge_routed_models(metadata: Dict[str, Any], routes: Dict[str, Dict[str, Any]]) -> None:
-    if not routes:
-        return
-    existing = metadata.get("routed_models")
-    merged: Dict[str, Dict[str, Any]] = {}
-    if isinstance(existing, dict):
-        for agent_id, payload in existing.items():
-            normalized = _normalize_route_entry(payload)
-            if normalized:
-                merged[agent_id] = normalized
-    for agent_id, payload in routes.items():
-        normalized = _normalize_route_entry(payload)
-        if not normalized:
-            continue
-        if agent_id in merged:
-            merged_entry = merged[agent_id]
-            merged_entry["history"] = _unique_list(
-                *(merged_entry.get("history", [])),
-                *(normalized.get("history", [])),
-            )
-            if not merged_entry.get("last"):
-                merged_entry["last"] = normalized.get("last")
-        else:
-            merged[agent_id] = normalized
-    if merged:
-        metadata["routed_models"] = merged
-
-
-def _normalize_route_entry(payload: Any) -> Dict[str, Any] | None:
-    if not isinstance(payload, dict):
-        return None
-    history = _unique_list(*payload.get("history", [])) if "history" in payload else []
-    last = payload.get("last")
-    if last is None and history:
-        last = history[-1]
-    return {"history": history, "last": last}
-
-
-def _unique_list(*values: Any) -> list[str]:
-    ordered: list[str] = []
-    seen: set[str] = set()
-    for value in values:
-        if isinstance(value, str):
-            trimmed = value.strip()
-            if trimmed and trimmed not in seen:
-                seen.add(trimmed)
-                ordered.append(trimmed)
-        elif isinstance(value, list):
-            for item in value:
-                if not isinstance(item, str):
-                    continue
-                trimmed = item.strip()
-                if trimmed and trimmed not in seen:
-                    seen.add(trimmed)
-                    ordered.append(trimmed)
-    return ordered
-
 
 if __name__ == "__main__":
     main()

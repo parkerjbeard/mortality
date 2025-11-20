@@ -1,10 +1,19 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, List, Sequence
 from uuid import uuid4
 
-from .base import LLMClient, LLMCompletion, LLMMessage, LLMProvider, LLMSession, LLMSessionConfig, ProviderUnavailable
+from .base import (
+    LLMClient,
+    LLMCompletion,
+    LLMMessage,
+    LLMProvider,
+    LLMSession,
+    LLMSessionConfig,
+    LLMToolCall,
+    ProviderUnavailable,
+)
 from .utils import to_gemini_contents
 
 
@@ -45,7 +54,6 @@ class GeminiChatClient(LLMClient):
         messages: Sequence[LLMMessage],
         tools: Sequence[Dict[str, object]] | None = None,
     ) -> LLMCompletion:
-        del tools  # tools are not yet supported for Gemini
         system_instruction, contents = to_gemini_contents(session, messages)
         config_kwargs: Dict[str, Any] = {
             "temperature": session.config.temperature,
@@ -55,6 +63,9 @@ class GeminiChatClient(LLMClient):
             config_kwargs["max_output_tokens"] = session.config.max_output_tokens
         if system_instruction:
             config_kwargs["system_instruction"] = system_instruction
+        tool_defs = self._convert_tools(tools)
+        if tool_defs:
+            config_kwargs["tools"] = tool_defs
         config = self._types.GenerateContentConfig(**config_kwargs)
         model_name = session.config.model or self._default_model
         response = await self._client.aio.models.generate_content(
@@ -64,7 +75,8 @@ class GeminiChatClient(LLMClient):
         )
         text = self._response_text(response)
         metadata = self._extract_metadata(response, model_name)
-        return LLMCompletion(text=text, metadata=metadata)
+        tool_calls = self._extract_tool_calls(response)
+        return LLMCompletion(text=text, metadata=metadata, tool_calls=tool_calls)
 
     def _response_text(self, response: Any) -> str:
         text = getattr(response, "text", None)
@@ -118,6 +130,62 @@ class GeminiChatClient(LLMClient):
         if hasattr(usage, "__dict__"):
             return {k: v for k, v in usage.__dict__.items() if not k.startswith("_")}
         return usage
+
+    def _convert_tools(self, tools: Sequence[Dict[str, object]] | None) -> List[Any] | None:
+        if not tools:
+            return None
+        declarations: List[Any] = []
+        for tool in tools:
+            if not isinstance(tool, dict):
+                continue
+            tool_type = tool.get("type")
+            if tool_type != "function":
+                continue
+            fn = tool.get("function")
+            if not isinstance(fn, dict):
+                continue
+            name = fn.get("name")
+            if not isinstance(name, str) or not name.strip():
+                continue
+            description = fn.get("description")
+            parameters = fn.get("parameters")
+            schema = None
+            if isinstance(parameters, dict):
+                schema = self._types.Schema(**parameters)
+            else:
+                schema = self._types.Schema(type="object")
+            declarations.append(
+                self._types.FunctionDeclaration(
+                    name=name.strip(),
+                    description=description,
+                    parameters=schema,
+                )
+            )
+        if not declarations:
+            return None
+        return [self._types.Tool(function_declarations=declarations)]
+
+    def _extract_tool_calls(self, response: Any) -> List[LLMToolCall]:
+        calls: List[LLMToolCall] = []
+        payload = getattr(response, "function_calls", None)
+        if isinstance(payload, list):
+            for entry in payload:
+                name = getattr(entry, "name", None)
+                if name is None and isinstance(entry, dict):
+                    name = entry.get("name")
+                if not name:
+                    continue
+                args = getattr(entry, "args", None)
+                if args is None and isinstance(entry, dict):
+                    args = entry.get("args")
+                if hasattr(args, "items"):
+                    arguments = dict(args)
+                elif isinstance(args, dict):
+                    arguments = dict(args)
+                else:
+                    arguments = {}
+                calls.append(LLMToolCall(name=str(name), arguments=arguments))
+        return calls
 
 
 __all__ = ["GeminiChatClient"]

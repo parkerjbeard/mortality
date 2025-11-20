@@ -75,7 +75,9 @@ class DiaryRespawnExperiment(BaseExperiment):
         if event.is_terminal:
             return LLMMessage(
                 role="user",
-                content=f"Life {life_index + 1} collapses now. Summarize what you learned this run and leave an instruction for your next self.",
+                content=(
+                    f"Life {life_index + 1} completes now. Summarize what you learned this run and leave an instruction for your next self."
+                ),
             )
         prefix = f"Life {life_index + 1}: "
         body = (

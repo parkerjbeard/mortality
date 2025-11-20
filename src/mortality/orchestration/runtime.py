@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections import deque
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Awaitable, Callable, Dict, Sequence, Tuple
+from typing import Any, Awaitable, Callable, Deque, Dict, Sequence, Tuple
 
 from ..agents.lifecycle import MortalityAgent
 from ..agents.memory import AgentMemory
@@ -39,6 +41,7 @@ class MortalityRuntime:
         self._peer_entry_digests: Dict[Tuple[str, str], str] = {}
         # Track last known ms_left per agent to enable peer-timer snapshots
         self._last_ms_left: Dict[str, int] = {}
+        self._turns = _TurnCoordinator(shared_bus=self.shared_bus)
 
     async def spawn_agent(
         self,
@@ -122,7 +125,7 @@ class MortalityRuntime:
             )
             # Update last-known ms_left for peer snapshots
             self._last_ms_left[event.agent_id] = event.ms_left
-            await handler(agent, event)
+            await self._turns.submit(agent, event, handler)
             if event.is_terminal:
                 self.telemetry.emit(
                     "timer.expired",
@@ -138,22 +141,33 @@ class MortalityRuntime:
         return timer
 
     def _handle_bus_broadcast(self, publisher_id: str) -> None:
-        """Trigger immediate micro-turns for peers after a new broadcast."""
+        """Trigger a micro-turn for the next waiting peer after a broadcast."""
 
-        nudged = 0
-        for agent_id, timer in self._timers.items():
-            if agent_id == publisher_id:
+        candidate_ids = [agent_id for agent_id in self._timers.keys() if agent_id != publisher_id]
+        if not candidate_ids:
+            return
+        target_id = self._turns.next_waiting_agent(exclude_agent_id=publisher_id)
+        if target_id and target_id in candidate_ids:
+            targets = [target_id]
+        else:
+            targets = candidate_ids
+        notified = 0
+        for agent_id in targets:
+            timer = self._timers.get(agent_id)
+            if not timer:
                 continue
             timer.request_micro_turn()
-            nudged += 1
-        if nudged:
-            self.telemetry.emit(
-                "timer.micro_turn",
-                {
-                    "publisher_id": publisher_id,
-                    "listeners_notified": nudged,
-                },
-            )
+            notified += 1
+        if not notified:
+            return
+        self.telemetry.emit(
+            "timer.micro_turn",
+            {
+                "publisher_id": publisher_id,
+                "listeners_notified": notified,
+                "target_id": targets[0],
+            },
+        )
 
     async def peer_diary_messages(
         self,
@@ -189,6 +203,7 @@ class MortalityRuntime:
         for timer in self._timers.values():
             timer.cancel()
         await asyncio.gather(*(task for task in self._timer_tasks.values()), return_exceptions=True)
+        await self._turns.aclose()
         self._agents.clear()
         self._timers.clear()
         self._timer_tasks.clear()
@@ -240,3 +255,92 @@ class MortalityRuntime:
 
 
 __all__ = ["MortalityRuntime"]
+
+
+@dataclass
+class _TurnJob:
+    agent: MortalityAgent
+    event: TimerEvent
+    handler: TickHandler
+    future: asyncio.Future[None]
+
+
+class _TurnCoordinator:
+    """Serialize agent ticks to enforce one speaking turn at a time."""
+
+    def __init__(self, *, shared_bus: SharedMCPBus | None) -> None:
+        self._shared_bus = shared_bus
+        self._queue: asyncio.Queue[_TurnJob | None] = asyncio.Queue()
+        self._worker: asyncio.Task[None] | None = None
+        self._waiting: Deque[str] = deque()
+        self._active_agent: str | None = None
+        self._turn_index = 0
+        self._closed = False
+
+    async def submit(self, agent: MortalityAgent, event: TimerEvent, handler: TickHandler) -> None:
+        if self._closed:
+            raise RuntimeError("turn coordinator is closed")
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[None] = loop.create_future()
+        job = _TurnJob(agent=agent, event=event, handler=handler, future=future)
+        self._waiting.append(agent.state.profile.agent_id)
+        self._ensure_worker()
+        await self._queue.put(job)
+        await future
+
+    def next_waiting_agent(self, *, exclude_agent_id: str | None = None) -> str | None:
+        for agent_id in self._waiting:
+            if agent_id != exclude_agent_id:
+                return agent_id
+        return None
+
+    async def aclose(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        await self._queue.join()
+        await self._queue.put(None)
+        if self._worker:
+            await self._worker
+
+    def _ensure_worker(self) -> None:
+        if self._worker and not self._worker.done():
+            return
+        loop = asyncio.get_running_loop()
+        self._worker = loop.create_task(self._worker_loop())
+
+    async def _worker_loop(self) -> None:
+        while True:
+            job = await self._queue.get()
+            if job is None:
+                self._queue.task_done()
+                break
+            agent_id = job.agent.state.profile.agent_id
+            self._consume_waiting(agent_id)
+            self._active_agent = agent_id
+            self._turn_index += 1
+            if self._shared_bus:
+                self._shared_bus.start_turn(agent_id, self._turn_index)
+            try:
+                await job.handler(job.agent, job.event)
+                if not job.future.done():
+                    job.future.set_result(None)
+            except Exception as exc:  # pragma: no cover
+                if not job.future.done():
+                    job.future.set_exception(exc)
+            finally:
+                if self._shared_bus:
+                    self._shared_bus.end_turn(agent_id)
+                self._active_agent = None
+                self._queue.task_done()
+
+    def _consume_waiting(self, agent_id: str) -> None:
+        if not self._waiting:
+            return
+        if self._waiting[0] == agent_id:
+            self._waiting.popleft()
+            return
+        try:
+            self._waiting.remove(agent_id)
+        except ValueError:
+            pass

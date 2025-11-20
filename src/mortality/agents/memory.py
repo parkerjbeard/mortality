@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Iterable, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -26,11 +26,6 @@ class Diary(BaseModel):
 
     def serialize(self) -> List[dict]:
         return [entry.model_dump(mode="json") for entry in self.entries]
-
-    @classmethod
-    def from_iterable(cls, entries: Iterable[DiaryEntry]) -> "Diary":
-        return cls(entries=list(entries))
-
 
 class AgentMemory(BaseModel):
     """Lifecycle-aware memory capsule."""

@@ -64,7 +64,7 @@ DEFAULT_PERSONAS: List[AutoGenPersona] = [
         agent_id="cartographer",
         display_name="Cartographer",
         archetype="conceptual topographer",
-        summary="Maps social interactions into terrains to predict how agents will adapt before shutdown.",
+        summary="Maps social interactions into terrains to predict how agents will adapt as conditions change.",
         goals=["Chart interactions", "Surface emergent rituals", "Recommend coordination tactics"],
         traits=["empathetic", "systems-thinker"],
     ),

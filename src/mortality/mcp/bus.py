@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, Iterable, List, Sequence
 
 from pydantic import BaseModel, Field
 
-from ..agents.memory import Diary, DiaryEntry
 from ..agents.profile import AgentProfile
 
 
@@ -44,22 +43,19 @@ class SharedMCPBus:
     """Central bus that exposes only explicit broadcast snippets (not private diaries)."""
 
     def __init__(self) -> None:
-        self._diaries: Dict[str, Diary] = {}
         self._broadcasts: Dict[str, List[BroadcastSnippet]] = {}
         self._profiles: Dict[str, AgentProfile] = {}
         self._listeners: List[Callable[[str], None]] = []
+        self._active_turn_agent: str | None = None
+        self._active_turn_index: int | None = None
 
     def register_agent(self, profile: AgentProfile) -> None:
         self._profiles[profile.agent_id] = profile
-        self._diaries.setdefault(profile.agent_id, Diary())
         self._broadcasts.setdefault(profile.agent_id, [])
 
-    # Deprecated: diaries are private now; kept for compatibility if referenced elsewhere.
-    def publish_entry(self, agent_id: str, entry: DiaryEntry) -> None:  # pragma: no cover - compatibility
-        self._diaries.setdefault(agent_id, Diary())
-        self._diaries[agent_id].add(entry.model_copy(deep=True))
-
     def publish_broadcast(self, agent_id: str, text: str) -> None:
+        if self._active_turn_agent and agent_id != self._active_turn_agent:
+            return
         bucket = self._broadcasts.setdefault(agent_id, [])
         bucket.append(BroadcastSnippet(text=text))
         for listener in list(self._listeners):
@@ -71,6 +67,15 @@ class SharedMCPBus:
     def subscribe_broadcasts(self, callback: Callable[[str], None]) -> None:
         if callback not in self._listeners:
             self._listeners.append(callback)
+
+    def start_turn(self, agent_id: str, turn_index: int) -> None:
+        self._active_turn_agent = agent_id
+        self._active_turn_index = turn_index
+
+    def end_turn(self, agent_id: str) -> None:
+        if self._active_turn_agent == agent_id:
+            self._active_turn_agent = None
+            self._active_turn_index = None
 
     async def fetch_broadcasts(
         self,

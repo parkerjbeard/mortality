@@ -6,10 +6,7 @@ import { PlaybackBar } from '@/components/PlaybackBar'
 import { BoardView } from '@/components/BoardView'
 import { formatDuration, formatTimestamp } from '@/lib/time'
 import { EventFilters } from '@/components/EventFilters'
-import {
-  EventCategory,
-  createDefaultFilterState,
-} from '@/lib/filters'
+import { EventCategory, createDefaultFilterState } from '@/lib/filters'
 
 const App = () => {
   const [bundle, setBundle] = useState<NormalizedBundle | null>(null)

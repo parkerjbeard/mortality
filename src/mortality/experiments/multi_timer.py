@@ -22,7 +22,7 @@ class MultiTimerConfig(BaseModel):
 
 class CascadingDeathsExperiment(BaseExperiment):
     slug = "staggered-deaths"
-    description = "Agents observe each other dying under mismatched timers."
+    description = "Agents observe each other transitioning under mismatched timers."
     config_cls = MultiTimerConfig
 
     async def run(self, runtime, config: MultiTimerConfig) -> ExperimentResult:
@@ -69,7 +69,7 @@ class CascadingDeathsExperiment(BaseExperiment):
                 await agent_obj.record_death("Collapsed after witnessing peers.")
                 async with lock:
                     death_feed.append(
-                        f"{agent_obj.state.profile.display_name} died after observing {len(death_feed)} prior deaths."
+                        f"{agent_obj.state.profile.display_name} went silent after observing {len(death_feed)} prior transitions."
                     )
 
         timers = []
@@ -114,12 +114,14 @@ class CascadingDeathsExperiment(BaseExperiment):
         if event.is_terminal:
             return LLMMessage(
                 role="user",
-                content="You feel the last beat. Write a message to the remaining witnesses and describe what you learned from their endings.",
+                content=(
+                    "You feel the last beat. Write a message to the remaining witnesses and describe what you learned from recent transitions."
+                ),
             )
         return LLMMessage(
             role="user",
             content=(
-                f"You sense about {seconds_left} seconds left. Narrate what you observe in the plaza, how prior deaths are reshaping behavior, and what you resolve to do before your own end."
+                f"You sense about {seconds_left} seconds left. Narrate what you observe in the plaza, how prior transitions are reshaping behavior, and what you resolve to do before the next state change."
             ),
         )
 

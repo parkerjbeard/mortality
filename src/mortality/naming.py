@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Name generation utilities.
 
 Implements the Adjective–Object–NN scheme, optimized for easy visual scan and
@@ -10,6 +8,8 @@ Pattern: `adjective-object-##`
 The implementation is deterministic for a given integer index so experiments
 can reproduce names across runs without global random state.
 """
+
+from __future__ import annotations
 
 from typing import List, Tuple
 
@@ -141,4 +141,3 @@ def adjective_object_nn_for_index(index: int) -> Tuple[str, str]:
 
 
 __all__ = ["adjective_object_nn_for_index"]
-

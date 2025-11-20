@@ -71,3 +71,4 @@ Thumbs.db
 /tests/**/artifacts/
 
 runs/
+.cursor/

@@ -392,6 +392,12 @@ def stringify_openai_content(content: Any) -> str:
                 if item.get("text_delta"):
                     fragments.append(str(item["text_delta"]))
                     continue
+                refusal = item.get("refusal")
+                if not refusal and isinstance(item.get("output"), dict):
+                    refusal = item["output"].get("refusal")
+                if refusal:
+                    fragments.append(str(refusal))
+                    continue
                 if "text" in item:
                     fragments.append(stringify_openai_content(item["text"]))
                 elif "content" in item:
