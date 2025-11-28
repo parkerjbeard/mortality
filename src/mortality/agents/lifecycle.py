@@ -34,6 +34,11 @@ class MortalityAgent:
         self._io_lock = asyncio.Lock()
         self._action_gate = ActionGate()
 
+    def configure_action_gate(self, **kwargs: Any) -> None:
+        """Expose ActionGate tuning without leaking concrete config types."""
+
+        self._action_gate.configure(**kwargs)
+
     @classmethod
     async def spawn(
         cls,

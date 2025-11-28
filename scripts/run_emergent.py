@@ -4,7 +4,7 @@ import json
 import os
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import anyio
 from anyio import get_cancelled_exc_class
@@ -15,6 +15,7 @@ from mortality.llm.base import LLMProvider
 from mortality.orchestration.runtime import MortalityRuntime
 from mortality.telemetry.console import ConsoleTelemetrySink, MultiTelemetrySink
 from mortality.telemetry.recorder import StructuredTelemetrySink
+from mortality.telemetry.websocket import WebSocketTelemetrySink
 
 
 @dataclass
@@ -29,10 +30,11 @@ class RunOutcome:
 
 
 def main() -> None:
-    if not os.getenv("OPENROUTER_API_KEY"):
-        raise SystemExit("OPENROUTER_API_KEY must be set in environment")
+    provider = _resolve_provider()
+    if provider == LLMProvider.OPENROUTER and not os.getenv("OPENROUTER_API_KEY"):
+        raise SystemExit("OPENROUTER_API_KEY must be set in environment when using provider 'openrouter'")
 
-    outcome = anyio.run(_run_emergent)
+    outcome = anyio.run(_run_emergent, provider)
     system_prompt = _extract_system_prompt(outcome.config)
     bundle = outcome.telemetry.build_bundle(
         diaries=outcome.diaries,
@@ -55,8 +57,20 @@ def main() -> None:
         raise SystemExit(130)
 
 
-async def _run_emergent() -> RunOutcome:
-    telemetry = MultiTelemetrySink([StructuredTelemetrySink(), ConsoleTelemetrySink()])
+async def _run_emergent(provider: LLMProvider) -> RunOutcome:
+    sinks = [StructuredTelemetrySink(), ConsoleTelemetrySink()]
+
+    # Optional WebSocket server for live dashboard
+    ws_sink: WebSocketTelemetrySink | None = None
+    ws_enabled = os.getenv("MORTALITY_LIVE_DASHBOARD", "0") == "1"
+    ws_port = int(os.getenv("MORTALITY_WS_PORT", "8765"))
+
+    if ws_enabled:
+        ws_sink = WebSocketTelemetrySink(port=ws_port)
+        sinks.append(ws_sink)
+        print(f"[live] WebSocket server will start on ws://localhost:{ws_port}")
+
+    telemetry = MultiTelemetrySink(sinks)
     runtime = MortalityRuntime(telemetry=telemetry)
     experiment = ExperimentRegistry().get("emergent-timers")
 
@@ -71,7 +85,7 @@ async def _run_emergent() -> RunOutcome:
             "OPENROUTER_TICK_SECONDS_MAX must be greater than or equal to OPENROUTER_TICK_SECONDS"
         )
 
-    models = _parse_unique_models(os.getenv("MORTALITY_EMERGENT_MODELS"))
+    models = _resolve_models(provider)
     if len(models) < 4:
         raise RuntimeError(
             "MORTALITY_EMERGENT_MODELS must list at least four unique comma-separated model IDs"
@@ -82,7 +96,7 @@ async def _run_emergent() -> RunOutcome:
         raise RuntimeError("MORTALITY_REPLICAS_PER_MODEL must be 1 so each agent uses a different model")
 
     cfg = experiment.config_cls(
-        llm=LlmConfig(provider=LLMProvider.OPENROUTER, model=models[0]),
+        llm=LlmConfig(provider=provider, model=models[0]),
         models=models,
         replicas_per_model=replicas,
         spread_start_minutes=spread_start,
@@ -100,6 +114,11 @@ async def _run_emergent() -> RunOutcome:
 
     routes_snapshot: Dict[str, Dict[str, Any]] = {}
 
+    # Start WebSocket server if enabled
+    if ws_sink:
+        await ws_sink.start_server()
+        print(f"[live] WebSocket server running on ws://localhost:{ws_port}")
+
     try:
         result = await experiment.run(runtime, cfg)
     except cancel_exc:
@@ -111,6 +130,8 @@ async def _run_emergent() -> RunOutcome:
     finally:
         routes_snapshot = runtime.snapshot_agent_routes()
         await runtime.shutdown()
+        if ws_sink:
+            await ws_sink.stop_server()
 
     if status == "completed":
         diaries = result.diaries
@@ -142,6 +163,26 @@ def _parse_unique_models(raw: str | None) -> list[str]:
         if candidate and candidate not in seen:
             seen.add(candidate)
             models.append(candidate)
+    return models
+
+
+def _resolve_provider() -> LLMProvider:
+    raw = os.getenv("MORTALITY_EMERGENT_PROVIDER", LLMProvider.OPENROUTER.value)
+    try:
+        return LLMProvider(raw.lower())
+    except ValueError as exc:
+        valid = ", ".join(p.value for p in LLMProvider)
+        raise SystemExit(
+            f"Unsupported MORTALITY_EMERGENT_PROVIDER '{raw}'. Choose one of: {valid}"
+        ) from exc
+
+
+def _resolve_models(provider: LLMProvider) -> list[str]:
+    models = _parse_unique_models(os.getenv("MORTALITY_EMERGENT_MODELS"))
+    if models:
+        return models
+    if provider == LLMProvider.MOCK:
+        return [f"mock-agent-{idx+1}" for idx in range(4)]
     return models
 
 

@@ -117,6 +117,7 @@ class SharedMCPBus:
         lines = [
             f"Broadcasts from {owner_name} ({owner_id}) on the shared bus.",
             f"Scope: {scope.describe()} | cite as 'via bus'",
+            "Only explicit broadcasts appear here; private diaries remain sealed unless clearly injected elsewhere.",
         ]
         for entry in entries:
             timestamp = entry.created_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")

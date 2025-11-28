@@ -69,10 +69,20 @@ autogen-demo: install env
 # --- 15-minute Emergent Timer Run (OpenRouter) ---
 
 emergent-run: install env
-  : "${OPENROUTER_API_KEY:?OPENROUTER_API_KEY is required for emergent-run}"
+  provider="${MORTALITY_EMERGENT_PROVIDER:-openrouter}"; \
+  if [ "$provider" = "openrouter" ]; then : "${OPENROUTER_API_KEY:?OPENROUTER_API_KEY is required for emergent-run when provider=openrouter}"; fi
   : "${OPENROUTER_REASONING:=low}"
   : "${OPENROUTER_TICK_SECONDS:=20}"
   : "${MORTALITY_EMERGENT_SPREAD_START:=5.0}"
   : "${MORTALITY_EMERGENT_SPREAD_END:=15.0}"
   : "${MORTALITY_REPLICAS_PER_MODEL:=1}"
   PYTHONPATH=src {{PY}} scripts/run_emergent.py
+
+# --- Emergent Timer Run with Live Dashboard ---
+
+emergent-live: install env
+  provider="${MORTALITY_EMERGENT_PROVIDER:-openrouter}"; \
+  if [ "$provider" = "openrouter" ]; then : "${OPENROUTER_API_KEY:?OPENROUTER_API_KEY is required for emergent-live when provider=openrouter}"; fi
+  @echo "[live] Starting experiment with live dashboard on ws://localhost:${MORTALITY_WS_PORT:-8765}"
+  @echo "[live] Open the UI at http://localhost:5173 and click 'Live' to connect"
+  MORTALITY_LIVE_DASHBOARD=1 PYTHONPATH=src {{PY}} scripts/run_emergent.py

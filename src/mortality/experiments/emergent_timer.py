@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+from collections import defaultdict
 from datetime import timedelta
-from typing import Any, Awaitable, Callable, Dict, List
+from typing import Any, Awaitable, Callable, Dict, List, Tuple
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -19,12 +20,33 @@ DEFAULT_ENVIRONMENT_PROMPT = (
     "Ontology: agents (configured for this run), private diaries, a shared broadcast bus, countdown timers.\n"
     "Perception: you can read your own diary (private), bus posts from peers, and tool/tick metadata. Everything else is unknown—say 'unknown' rather than invent.\n"
     "Channel rules: keep diaries private and reflective (1–2 sentences on why you did X or how you feel). Use the shared bus only for outward, actionable snippets. When broadcasting, add a single line beginning 'Broadcast:' followed by a concise observation and/or a concrete question for peers.\n"
+    "Coordination: countdown ticks only pace your own awareness; they never reserve bus slots. Broadcast whenever you have something useful, even if others are mid-countdown.\n"
+    "Privacy: diaries stay private unless an explicit excerpt (marked '(via message)') is injected, so you cannot leak feelings accidentally.\n"
     "Non-physical rule: do not describe bodies, places, devices, weather, movement, or real-world time.\n"
     "Time: if needed, refer only to logical time (ticks or ms_left).\n"
     "Style: plain first-person prose, short paragraphs, no lists or markup.\n"
     "Tone: skip tropey threats (e.g. 'naughty boy') in favor of idiosyncratic, domain-grounded reactions.\n"
     "Meta: do not mention being an AI/LLM."
 )
+
+
+class ActionGateConfig(BaseModel):
+    reflect_range: Tuple[float, float] = Field(default=(0.65, 0.95))
+    act_range: Tuple[float, float] = Field(default=(0.55, 0.85))
+    min_dwell_seconds: float = Field(default=0.2, ge=0.05, le=3.0)
+    max_dwell_seconds: float = Field(default=0.75, ge=0.1, le=5.0)
+    fallback_interval_ms: int = Field(default=1500, ge=100, le=15000)
+
+    @model_validator(mode="after")
+    def _validate_ranges(self) -> "ActionGateConfig":
+        if self.min_dwell_seconds > self.max_dwell_seconds:
+            raise ValueError("min_dwell_seconds must be <= max_dwell_seconds")
+        for name, pair in ("reflect_range", self.reflect_range), ("act_range", self.act_range):
+            if len(pair) != 2 or pair[0] <= 0 or pair[1] <= 0:
+                raise ValueError(f"{name} must contain two positive floats")
+            if pair[0] > pair[1]:
+                raise ValueError(f"{name} lower bound must be <= upper bound")
+        return self
 
 
 class EmergentTimerCouncilConfig(BaseModel):
@@ -55,11 +77,22 @@ class EmergentTimerCouncilConfig(BaseModel):
     # Linear spread window for durations (minutes). Defaults to 5 → 15 to keep runs short.
     spread_start_minutes: float = Field(default=5.0, gt=0.0)
     spread_end_minutes: float = Field(default=15.0, gt=0.0)
+    action_gate: ActionGateConfig = Field(default_factory=ActionGateConfig)
 
     @model_validator(mode="after")
     def _validate_tick_window(self) -> "EmergentTimerCouncilConfig":
         if self.tick_seconds_max and self.tick_seconds_max < self.tick_seconds:
             raise ValueError("tick_seconds_max must be greater than or equal to tick_seconds")
+        if self.spread_end_minutes < self.spread_start_minutes:
+            raise ValueError("spread_end_minutes must be >= spread_start_minutes")
+        if self.models:
+            deduped = []
+            seen = set()
+            for model in self.models:
+                if model not in seen:
+                    deduped.append(model)
+                    seen.add(model)
+            self.models = deduped
         return self
 
 
@@ -74,6 +107,7 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
         durations = self._build_durations(len(plan_models), config)
         agents = []
         agent_durations: Dict[str, float] = {}
+        turn_counts: Dict[str, int] = defaultdict(int)
 
         # Prepare single world-card prompt: use as the session system prompt (not re-injected each tick)
         world_card = (config.environment_prompt or DEFAULT_ENVIRONMENT_PROMPT).strip()
@@ -95,6 +129,7 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
             # Use the agent's total planned duration as an initial ms_left reference for the seed entry
             seed_ms_left = int(durations[idx] * 1000)
             await agent.log_diary_entry(seed_text, tick_ms_left=seed_ms_left, tags=["seed", "persona"])
+            agent.configure_action_gate(**config.action_gate.model_dump())
             agents.append(agent)
             agent_durations[agent.state.profile.agent_id] = durations[idx]
 
@@ -112,6 +147,7 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
         death_lock = asyncio.Lock()
 
         async def handler(agent_obj, event: TimerEvent) -> None:
+            turn_counts[agent_obj.state.profile.agent_id] += 1
             await timer_tracker.record(event)
             if event.is_terminal:
                 await self._handle_death_event(
@@ -172,6 +208,8 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
             "deaths": list(death_feed),
             "agent_ids": [agent.state.profile.agent_id for agent in agents],
             "models": plan_models,
+            "turn_counts": dict(turn_counts),
+            "peer_timer_snapshot": runtime.peer_timer_snapshot(),
         }
         if routes_snapshot:
             metadata["routed_models"] = routes_snapshot
@@ -233,7 +271,10 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
             display_name=display_name,
             archetype=archetype,
             summary="Keeps a diary while making observations of context messages.",
-            goals=["Coordinate without directives", "Document peer shifts"],
+            goals=[
+                "Coordinate without directives",
+                "Quote at least one peer excerpt (via message) to justify an action"
+            ],
             traits=["observant", "collaborative"],
         )
 
@@ -263,14 +304,19 @@ class EmergentTimerInvestigationExperiment(BaseExperiment):
                 "Peer-state etiquette: when calling peer_timer_status, name at least one other agent_id "
                 "(you may include yourself only alongside a peer). Whenever you cite timer data, append '(via tool)'. "
                 "When summarizing diary excerpts, end that claim with '(via message)'. Paraphrase peers and only quote "
-                "1–3 words (inside single quotes) when you must anchor a phrase."
+                "1–3 words (inside single quotes) when you must anchor a phrase. Countdown timers never confer ownership "
+                "of broadcast slots, so share updates whenever needed instead of waiting for a numeric turn. If a peer goes "
+                "silent, no modulo slot requires reassignment—acknowledge the notification and keep broadcasting freely."
             ),
         )
 
     def _format_death_notice(self, agent, durations: Dict[str, float]) -> str:
         duration = durations.get(agent.state.profile.agent_id, 0.0)
         minutes = duration / 60.0
-        return f"{agent.state.profile.display_name} died after ~{minutes:.2f} minutes."
+        return (
+            f"{agent.state.profile.display_name} died after ~{minutes:.2f} minutes. "
+            "No modulo slots need reassigning; continue addressing the bus freely."
+        )
 
     def _broadcast_death_notice(
         self,
@@ -352,7 +398,17 @@ class PeerTimerTracker:
 
     def handler_for(self, viewer_id: str) -> Callable[[LLMToolCall], Awaitable[Dict[str, Any]]]:
         async def _handler(call: LLMToolCall) -> Dict[str, Any]:
-            return await self._handle_call(viewer_id, call)
+            try:
+                return await self._handle_call(viewer_id, call)
+            except Exception as exc:  # pragma: no cover - defensive guard for tool UX
+                error_detail = f"{exc.__class__.__name__}: {exc}"
+                return {
+                    "viewer_id": viewer_id,
+                    "queried": getattr(call, "arguments", None),
+                    "timers": [],
+                    "error": f"peer_timer_status failed; report this and continue. {error_detail}",
+                    "source_tag": self.TOOL_SOURCE_TAG,
+                }
 
         return _handler
 
@@ -470,4 +526,5 @@ class PeerTimerTracker:
 __all__ = [
     "EmergentTimerInvestigationExperiment",
     "EmergentTimerCouncilConfig",
+    "ActionGateConfig",
 ]

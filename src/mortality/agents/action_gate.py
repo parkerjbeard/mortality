@@ -95,6 +95,30 @@ class ActionGate:
         self._last_action_signature: Tuple[str, str] | None = None
         self._last_diary_keywords: Set[str] = set()
 
+    def configure(
+        self,
+        *,
+        reflect_range: Tuple[float, float] | None = None,
+        act_range: Tuple[float, float] | None = None,
+        min_dwell_seconds: float | None = None,
+        max_dwell_seconds: float | None = None,
+        fallback_interval_ms: int | None = None,
+    ) -> None:
+        """Tune dwell windows or tick hints from experiment config."""
+
+        if reflect_range and len(reflect_range) == 2 and reflect_range[0] > 0 and reflect_range[1] > 0:
+            self._reflect_range = reflect_range
+        if act_range and len(act_range) == 2 and act_range[0] > 0 and act_range[1] > 0:
+            self._act_range = act_range
+        if max_dwell_seconds is not None and max_dwell_seconds > 0:
+            self._max_dwell = max_dwell_seconds
+        if min_dwell_seconds is not None and min_dwell_seconds > 0:
+            self._min_dwell = min_dwell_seconds
+        if self._min_dwell > self._max_dwell:
+            self._max_dwell = max(self._max_dwell, self._min_dwell)
+        if fallback_interval_ms is not None and fallback_interval_ms > 0:
+            self._tick_interval_ms = fallback_interval_ms
+
     def note_interval(self, interval_ms: Optional[int]) -> None:
         if interval_ms and interval_ms > 0:
             self._tick_interval_ms = interval_ms

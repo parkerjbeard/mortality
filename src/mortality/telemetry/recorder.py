@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
+import hashlib
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping
 
@@ -20,6 +21,8 @@ class TelemetryEvent:
 
 class StructuredTelemetrySink(TelemetrySink):
     """Collects telemetry events for later export to Mortality UI bundles."""
+
+    SCHEMA_VERSION = 2
 
     def __init__(self) -> None:
         self._events: List[TelemetryEvent] = []
@@ -56,19 +59,23 @@ class StructuredTelemetrySink(TelemetrySink):
         extra: Dict[str, Any] | None = None,
         system_prompt: str | None = None,
     ) -> Dict[str, Any]:
+        safe_metadata = dict(metadata)
+        if system_prompt:
+            digest = hashlib.sha256(system_prompt.encode("utf-8", "replace")).hexdigest()
+            safe_metadata.setdefault("system_prompt_sha256", digest)
         ordered_items: List[tuple[str, Any]] = []
         if system_prompt is not None:
             ordered_items.append(("system_prompt", system_prompt))
         ordered_items.extend(
             [
                 ("bundle_type", "mortality/ui#events"),
-                ("schema_version", 1),
+                ("schema_version", self.SCHEMA_VERSION),
                 ("exported_at", datetime.now(timezone.utc).isoformat()),
                 ("experiment", experiment),
                 ("config", config),
                 ("llm", llm),
                 ("agents", self.agent_profiles),
-                ("metadata", metadata),
+                ("metadata", safe_metadata),
                 ("diaries", diaries),
                 ("events", [event.as_dict() for event in self._events]),
                 ("extra", extra or {}),

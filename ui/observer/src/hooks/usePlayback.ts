@@ -35,6 +35,17 @@ export const usePlayback = ({
   }, [startMs, endMs])
 
   useEffect(() => {
+    if (typeof document === 'undefined') return
+    const handleVisibility = () => {
+      if (document.hidden) {
+        setPlaying(false)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [setPlaying])
+
+  useEffect(() => {
     if (!playing) {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current)
